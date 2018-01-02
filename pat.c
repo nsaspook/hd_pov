@@ -255,8 +255,8 @@ uint8_t init_rms_params(void)
 	V.line_num = 0;
 
 	L_ptr = &L[0];
-	/* two line strobes */
-	L[0].strobe[0] = 60000;
+	/* two line strobes in 3 16-bit timer values for spacing */
+	L[0].strobe[0] = 60000; 
 	L[0].strobe[1] = 64300;
 	L[0].strobe[2] = 10000;
 	L[1].strobe[0] = 50000; // 62000
