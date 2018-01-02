@@ -4,7 +4,7 @@
 #include <p18f1320.h>
 
 // CONFIG1H
-#pragma config OSC = HSPLL      // Oscillator Selection bits 
+#pragma config OSC = HSPLL      // Oscillator Selection bits 40MHz fosc with PLL and 10MHz clock input
 #pragma config FSCM = ON        // Fail-Safe Clock Monitor Enable bit (Fail-Safe Clock Monitor enabled)
 #pragma config IESO = ON        // Internal External Switchover bit (Internal External Switchover mode enabled)
 
@@ -67,11 +67,10 @@ void init_rmsmon(void);
 uint8_t init_rms_params(void);
 
 #pragma udata
-volatile struct V_data V;
-volatile union Obits2 LEDS;
 int8_t str[24];
 near struct L_data *L_ptr;
 #pragma udata access ACCESSBANK
+near volatile struct V_data V;
 volatile uint16_t timer0_off = TIMEROFFSET;
 near volatile struct L_data L[2];
 volatile uint8_t l_state = 2;
@@ -92,15 +91,16 @@ void tm_int(void)
 void tm_handler(void) // timer/serial functions are handled here
 {
 
-	if (INTCONbits.INT0IF) {
+	if (INTCONbits.INT0IF) { // Hall effect index signal, start of rotation
 		INTCONbits.INT0IF = FALSE;
 		RPMLED = !RPMLED;
-		if (l_state == 1) { // off state too long for full rotation
+		if (l_state == 1) { // off state too long for full rotation, hall signal while in state 1
 			l_full += 50; // off state lower limit adjustments for smooth strobe rotation
 		}
 		l_state = 0; // restart lamp flashing sequence, off time
 
-		L_ptr = &L[V.line_num];
+		L_ptr = &L[V.line_num]; // select line strobe data
+		
 		switch (V.line_num) {
 		case 0:
 			L_ptr->strobe[0] -= strobe_down; // start sliding the positions
@@ -122,18 +122,18 @@ void tm_handler(void) // timer/serial functions are handled here
 		V.line_num++;
 	}
 
-	if (PIR1bits.TMR1IF || l_state == 0) { //      Timer1 int handler 
+	if (PIR1bits.TMR1IF || l_state == 0) { //      Timer1 int handler, for strobe timing
 		PIR1bits.TMR1IF = FALSE;
 		WriteTimer1(L_ptr->strobe[l_state]); // strobe positioning during rotation
 
 		switch (l_state) {
 		case 0:
 			G_OUT = 0;
-			l_state = 1; // off time
+			l_state = 1; // off time after index to start time
 			break;
 		case 1:
 			G_OUT = 1;
-			l_state = 2; // on start time
+			l_state = 2; // on start time duration for strobe pulse
 			break;
 		case 2:
 			G_OUT = 0; // wait to next rotation

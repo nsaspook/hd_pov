@@ -32,22 +32,6 @@ typedef struct L_data {
 	uint16_t strobe[3];	
 } L_data;
 
-typedef struct OUTBITS2 {
-    uint8_t b0 : 1;
-    uint8_t b1 : 1;
-    uint8_t b2 : 1;
-    uint8_t b3 : 1;
-    uint8_t b4 : 1;
-    uint8_t b5 : 1;
-    uint8_t b6 : 1;
-    uint8_t b7 : 1;
-} OUTBITS_TYPE2;
-
-union Obits2 {
-    uint8_t out_byte;
-    OUTBITS_TYPE2 out_bits;
-};
-
 #define TRUE	1
 #define FALSE	0
 #define	ON	1
