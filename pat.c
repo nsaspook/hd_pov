@@ -69,11 +69,13 @@ uint8_t init_rms_params(void);
 #pragma udata
 volatile struct V_data V;
 volatile union Obits2 LEDS;
-int8_t str[12];
+int8_t str[24];
 near struct L_data *L_ptr;
 #pragma udata access ACCESSBANK
 volatile uint16_t timer0_off = TIMEROFFSET;
 near volatile struct L_data L[2];
+volatile uint8_t l_state = 2;
+volatile uint16_t l_full = 1000;
 
 const far rom int8_t build_date[] = __DATE__, build_time[] = __TIME__;
 
@@ -89,8 +91,6 @@ void tm_int(void)
 
 void tm_handler(void) // timer/serial functions are handled here
 {
-	static uint8_t l_state = 2;
-	static uint16_t l_full = 1000;
 
 	if (INTCONbits.INT0IF) {
 		INTCONbits.INT0IF = FALSE;
@@ -103,12 +103,12 @@ void tm_handler(void) // timer/serial functions are handled here
 		L_ptr = &L[V.line_num];
 		switch (V.line_num) {
 		case 0:
-			L_ptr->strobe[0] -= 31; // start sliding the start positions
+			L_ptr->strobe[0] -= 31; // start sliding the positions
 			if (L_ptr->strobe[0] < l_full)
 				L_ptr->strobe[0] = 65000; // set to upper limit
 			break;
 		case 1:
-			L_ptr->strobe[0] += 67; // start sliding the start positions
+			L_ptr->strobe[0] += 67;
 			if (L_ptr->strobe[0] < l_full)
 				L_ptr->strobe[0] = l_full; // set to lower limit
 			break;
@@ -123,7 +123,7 @@ void tm_handler(void) // timer/serial functions are handled here
 	}
 
 	if (PIR1bits.TMR1IF || l_state == 0) { //      Timer1 int handler 
-		PIR1bits.TMR1IF = FALSE; //      clear int flag
+		PIR1bits.TMR1IF = FALSE;
 		WriteTimer1(L_ptr->strobe[l_state]); // 
 
 		switch (l_state) {
@@ -136,7 +136,7 @@ void tm_handler(void) // timer/serial functions are handled here
 			l_state = 2; // on start time
 			break;
 		case 2:
-			G_OUT = 0;
+			G_OUT = 0; // wait to next rotation
 			break;
 		default:
 			G_OUT = 0;
@@ -158,8 +158,6 @@ void tm_handler(void) // timer/serial functions are handled here
 		INTCONbits.TMR0IF = FALSE; //      clear interrupt flag
 		WriteTimer0(timer0_off);
 		LED5 = !LED5; // active LED blinker
-		//		if (G_OUT && l_state != 2) // check for stuck LED
-		//			G_OUT = 0;
 	}
 
 }
@@ -170,7 +168,13 @@ int16_t sw_work(void)
 
 	ClrWdt(); // reset watchdog
 
-	if (V.spinning) {
+	if (!SW1) {
+		putrsUSART("Timer limit ");
+		itoa(l_full, str);
+		putsUSART(str);
+		putrsUSART("Timer value ");
+		itoa(L_ptr->strobe[0], str);
+		putsUSART(str);
 		LED1 = 1;
 	} else {
 		LED1 = 0;
@@ -215,13 +219,17 @@ void init_rmsmon(void)
 	WriteTimer0(timer0_off); //	start timer0 at ~1/2 second ticks
 	OpenTimer1(TIMER_INT_ON & T1_16BIT_RW & T1_SOURCE_INT & T1_PS_1_2 & T1_OSC1EN_OFF & T1_SYNC_EXT_OFF); //
 	WriteTimer1(SAMPLEFREQ);
-	/* Light-link data input */
+	/* data link */
 	COMM_ENABLE = TRUE; // for PICDEM4 onboard RS-232, not used on custom board
 	OpenUSART(USART_TX_INT_OFF &
 		USART_RX_INT_ON &
 		USART_ASYNCH_MODE &
 		USART_EIGHT_BIT &
-		USART_CONT_RX, 50); // 8mhz internal osc 9600
+		USART_CONT_RX, 64); // 40MHz fosc 9600
+	TXSTAbits.SYNC = 0;
+	TXSTAbits.BRGH = 0;
+	BAUDCTLbits.BRG16 = 0;
+	SPBRG = 64;
 
 	/*      work int thread setup */
 	INTCONbits.TMR0IE = 1; // enable int
@@ -264,9 +272,5 @@ void main(void)
 	/* Loop forever */
 	while (TRUE) { // busy work
 		sw_work(); // run housekeeping
-		Nop();
-		Nop();
-		Nop();
-		Nop();
 	}
 }

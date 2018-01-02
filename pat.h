@@ -60,7 +60,7 @@ union Obits2 {
 
 #define RMSPORTA	TRISA
 #define RMSPORTB	TRISB
-#define RMSPORT_IOA	0b00000000		// all outputs RMS signal on 
+#define RMSPORT_IOA	0b00010000		// SW1 input RA4
 #define RMSPORT_IOB	0b00010001		// Rs-232 transmit on B1, receive on B4, hall gear sensor on B0
 
 #define LED1		LATAbits.LATA3
@@ -76,13 +76,6 @@ union Obits2 {
 #define B_OUT		LATAbits.LATA2
 #define TACHIN		LATBbits.LATB0
 #define RPMLED		LATBbits.LATB5
-
-#define RPM_COUNT	1
-#define SLEEP_COUNT	30
-#define STOP_RAMP	1
-#define START_RAMP	1
-#define MAX_TICK	3
-#define MAX_SPURIOUS	10
-#define SPIN_LIMIT_H	10
+#define SW1		PORTAbits.RA4
 
 #endif 
