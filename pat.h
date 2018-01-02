@@ -78,4 +78,6 @@ union Obits2 {
 #define RPMLED		LATBbits.LATB5
 #define SW1		PORTAbits.RA4
 
+#define strobe_up	67
+#define strobe_down	31
 #endif 

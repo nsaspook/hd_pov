@@ -96,24 +96,24 @@ void tm_handler(void) // timer/serial functions are handled here
 		INTCONbits.INT0IF = FALSE;
 		RPMLED = !RPMLED;
 		if (l_state == 1) { // off state too long for full rotation
-			l_full += 50; // off state lower limit
+			l_full += 50; // off state lower limit adjustments for smooth strobe rotation
 		}
 		l_state = 0; // restart lamp flashing sequence, off time
 
 		L_ptr = &L[V.line_num];
 		switch (V.line_num) {
 		case 0:
-			L_ptr->strobe[0] -= 31; // start sliding the positions
+			L_ptr->strobe[0] -= strobe_down; // start sliding the positions
 			if (L_ptr->strobe[0] < l_full)
 				L_ptr->strobe[0] = 65000; // set to upper limit
 			break;
 		case 1:
-			L_ptr->strobe[0] += 67;
+			L_ptr->strobe[0] += strobe_up;
 			if (L_ptr->strobe[0] < l_full)
-				L_ptr->strobe[0] = l_full; // set to lower limit
+				L_ptr->strobe[0] = l_full; // set to sliding lower limit
 			break;
 		default:
-			L_ptr->strobe[0] -= 31;
+			L_ptr->strobe[0] -= strobe_down;
 			if (L_ptr->strobe[0] < l_full)
 				L_ptr->strobe[0] = 65000; // set to upper limit
 			break;
@@ -124,7 +124,7 @@ void tm_handler(void) // timer/serial functions are handled here
 
 	if (PIR1bits.TMR1IF || l_state == 0) { //      Timer1 int handler 
 		PIR1bits.TMR1IF = FALSE;
-		WriteTimer1(L_ptr->strobe[l_state]); // 
+		WriteTimer1(L_ptr->strobe[l_state]); // strobe positioning during rotation
 
 		switch (l_state) {
 		case 0:
@@ -198,7 +198,6 @@ void init_rmsmon(void)
 		STKPTRbits.STKUNF = 0;
 	}
 
-	OSCCON = 0x72;
 	ADCON1 = 0x7F; // all digital, no ADC
 	/* interrupt priority ON */
 	RCONbits.IPEN = 1;
@@ -217,7 +216,7 @@ void init_rmsmon(void)
 	timer0_off = TIMEROFFSET; // blink fast
 	OpenTimer0(TIMER_INT_ON & T0_16BIT & T0_SOURCE_INT & T0_PS_1_256); // led blinker
 	WriteTimer0(timer0_off); //	start timer0 at ~1/2 second ticks
-	OpenTimer1(TIMER_INT_ON & T1_16BIT_RW & T1_SOURCE_INT & T1_PS_1_2 & T1_OSC1EN_OFF & T1_SYNC_EXT_OFF); //
+	OpenTimer1(TIMER_INT_ON & T1_16BIT_RW & T1_SOURCE_INT & T1_PS_1_2 & T1_OSC1EN_OFF & T1_SYNC_EXT_OFF); // strobe position clock
 	WriteTimer1(SAMPLEFREQ);
 	/* data link */
 	COMM_ENABLE = TRUE; // for PICDEM4 onboard RS-232, not used on custom board
@@ -256,6 +255,7 @@ uint8_t init_rms_params(void)
 	V.line_num = 0;
 
 	L_ptr = &L[0];
+	/* two line strobes */
 	L[0].strobe[0] = 60000;
 	L[0].strobe[1] = 64300;
 	L[0].strobe[2] = 10000;
