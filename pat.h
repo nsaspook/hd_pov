@@ -40,7 +40,7 @@ typedef struct L_data {
 #define	LEDOFF	1
 
 #define	TIMEROFFSET	18000		// timer0 16bit counter value for ~1 second to overflow 44268
-#define	SAMPLEFREQ	65266		// timer1 850hz
+#define	SAMPLEFREQ	60000		// timer1 default value
 
 #define RMSPORTA	TRISA
 #define RMSPORTB	TRISB
@@ -64,4 +64,7 @@ typedef struct L_data {
 
 #define strobe_up	67
 #define strobe_down	31
+#define strobe_adjust	11
+#define strobe_limit_l	24400 // this limit +500 is from the rs-232 port
+#define strobe_limit_h	65530
 #endif 

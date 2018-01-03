@@ -74,7 +74,7 @@ near volatile struct V_data V;
 volatile uint16_t timer0_off = TIMEROFFSET;
 near volatile struct L_data L[2];
 volatile uint8_t l_state = 2;
-volatile uint16_t l_full = 1000;
+volatile uint16_t l_full = strobe_limit_l;
 
 const far rom int8_t build_date[] = __DATE__, build_time[] = __TIME__;
 
@@ -95,17 +95,18 @@ void tm_handler(void) // timer/serial functions are handled here
 		INTCONbits.INT0IF = FALSE;
 		RPMLED = !RPMLED;
 		if (l_state == 1) { // off state too long for full rotation, hall signal while in state 1
-			l_full += 50; // off state lower limit adjustments for smooth strobe rotation
+			l_full += strobe_adjust; // off state lower limit adjustments for smooth strobe rotation
 		}
 		l_state = 0; // restart lamp flashing sequence, off time
 
 		L_ptr = &L[V.line_num]; // select line strobe data
 		
+		/* limit rotational timer values */
 		switch (V.line_num) {
 		case 0:
 			L_ptr->strobe[0] -= strobe_down; // start sliding the positions
 			if (L_ptr->strobe[0] < l_full)
-				L_ptr->strobe[0] = 65000; // set to upper limit
+				L_ptr->strobe[0] = strobe_limit_h; // set to upper limit rollover
 			break;
 		case 1:
 			L_ptr->strobe[0] += strobe_up;
@@ -115,7 +116,7 @@ void tm_handler(void) // timer/serial functions are handled here
 		default:
 			L_ptr->strobe[0] -= strobe_down;
 			if (L_ptr->strobe[0] < l_full)
-				L_ptr->strobe[0] = 65000; // set to upper limit
+				L_ptr->strobe[0] = strobe_limit_h;
 			break;
 		}
 
@@ -165,7 +166,6 @@ void tm_handler(void) // timer/serial functions are handled here
 /* main loop routine */
 int16_t sw_work(void)
 {
-
 	ClrWdt(); // reset watchdog
 
 	if (!SW1) {
@@ -256,11 +256,12 @@ uint8_t init_rms_params(void)
 
 	L_ptr = &L[0];
 	/* two line strobes in 3 16-bit timer values for spacing */
+	/* for an interrupt driven state machine */
 	L[0].strobe[0] = 60000; 
-	L[0].strobe[1] = 64300;
+	L[0].strobe[1] = 64900;
 	L[0].strobe[2] = 10000;
 	L[1].strobe[0] = 50000; // 62000
-	L[1].strobe[1] = 64300;
+	L[1].strobe[1] = 64900;
 	L[1].strobe[2] = 10000;
 	return 0;
 }

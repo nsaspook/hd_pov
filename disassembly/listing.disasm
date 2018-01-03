@@ -1,7 +1,7 @@
 Disassembly Listing for hd_pov
 Generated From:
 /fred/hd_pov/dist/default/production/hd_pov.production.cof
-Jan 2, 2018 10:42:26 AM
+Jan 2, 2018 3:34:45 PM
 
 ---  /fred/hd_pov/pat.c  --------------------------------------------------------------------------------
 1:             
@@ -80,7 +80,7 @@ Jan 2, 2018 10:42:26 AM
 74:            volatile uint16_t timer0_off = TIMEROFFSET;
 75:            near volatile struct L_data L[2];
 76:            volatile uint8_t l_state = 2;
-77:            volatile uint16_t l_full = 1000;
+77:            volatile uint16_t l_full = strobe_limit_l;
 78:            
 79:            const far rom int8_t build_date[] = __DATE__, build_time[] = __TIME__;
 80:            
@@ -141,19 +141,19 @@ Jan 2, 2018 10:42:26 AM
 006C  52E6     MOVF POSTINC1, F, ACCESS
 92:            {
 93:            
-94:            	if (INTCONbits.INT0IF) {
+94:            	if (INTCONbits.INT0IF) { // Hall effect index signal, start of rotation
 006E  A2F2     BTFSS INTCON, 1, ACCESS
-0070  D041     BRA 0xF4
+0070  D040     BRA 0xF2
 95:            		INTCONbits.INT0IF = FALSE;
 0072  92F2     BCF INTCON, 1, ACCESS
 96:            		RPMLED = !RPMLED;
 0074  7A8A     BTG LATB, 5, ACCESS
-97:            		if (l_state == 1) { // off state too long for full rotation
+97:            		if (l_state == 1) { // off state too long for full rotation, hall signal while in state 1
 0076  0100     MOVLB 0x0
 0078  05E6     DECF l_state, W, BANKED
 007A  E104     BNZ 0x84
-98:            			l_full += 50; // off state lower limit adjustments for smooth strobe rotation
-007C  0E32     MOVLW 0x32
+98:            			l_full += strobe_adjust; // off state lower limit adjustments for smooth strobe rotation
+007C  0E0B     MOVLW 0xB
 007E  27E7     ADDWF l_full, F, BANKED
 0080  0E00     MOVLW 0x0
 0082  23E8     ADDWFC 0xE8, F, BANKED
@@ -161,7 +161,7 @@ Jan 2, 2018 10:42:26 AM
 100:           		l_state = 0; // restart lamp flashing sequence, off time
 0084  6BE6     CLRF l_state, BANKED
 101:           
-102:           		L_ptr = &L[V.line_num];
+102:           		L_ptr = &L[V.line_num]; // select line strobe data
 0086  5002     MOVF 0x2, W, ACCESS
 0088  0B04     ANDLW 0x4
 008A  E001     BZ 0x8E
@@ -176,7 +176,9 @@ Jan 2, 2018 10:42:26 AM
 009C  27D8     ADDWF L_ptr, F, BANKED
 009E  0E00     MOVLW 0x0
 00A0  23D9     ADDWFC 0xD9, F, BANKED
-103:           		switch (V.line_num) {
+103:           		
+104:           		/* limit rotational timer values */
+105:           		switch (V.line_num) {
 00A2  5002     MOVF 0x2, W, ACCESS
 00A4  0B04     ANDLW 0x4
 00A6  E001     BZ 0xAA
@@ -185,1113 +187,1112 @@ Jan 2, 2018 10:42:26 AM
 00AC  E00A     BZ 0xC2
 00AE  0A01     XORLW 0x1
 00B0  E004     BZ 0xBA
-104:           		case 0:
-105:           			L_ptr->strobe[0] -= strobe_down; // start sliding the positions
-00BA  D959     RCALL __pa_2
-00BC  D95D     RCALL __pa_3
-036E  C0D8     MOVFF L_ptr, FSR0
-0370  FFE9     NOP
-0372  C0D9     MOVFF 0xD9, FSR0H
-0374  FFEA     NOP
-0376  0012     RETURN 0
-106:           			if (L_ptr->strobe[0] < l_full)
-00BE  E213     BC 0xE6
-107:           				L_ptr->strobe[0] = 65000; // set to upper limit
-108:           			break;
+106:           		case 0:
+107:           			L_ptr->strobe[0] -= strobe_down; // start sliding the positions
+00BA  D958     RCALL __pa_2
+00BC  D95C     RCALL __pa_3
+036C  C0D8     MOVFF L_ptr, FSR0
+036E  FFE9     NOP
+0370  C0D9     MOVFF 0xD9, FSR0H
+0372  FFEA     NOP
+0374  0012     RETURN 0
+108:           			if (L_ptr->strobe[0] < l_full)
+00BE  E212     BC 0xE4
+109:           				L_ptr->strobe[0] = strobe_limit_h; // set to upper limit rollover
+110:           			break;
 00C0  D00D     BRA 0xDC
-109:           		case 1:
-110:           			L_ptr->strobe[0] += strobe_up;
-00C2  D955     RCALL __pa_2
+111:           		case 1:
+112:           			L_ptr->strobe[0] += strobe_up;
+00C2  D954     RCALL __pa_2
 00C4  0E43     MOVLW 0x43
 00C6  26EE     ADDWF POSTINC0, F, ACCESS
 00C8  0E00     MOVLW 0x0
 00CA  22ED     ADDWFC POSTDEC0, F, ACCESS
-111:           			if (L_ptr->strobe[0] < l_full)
-00CC  D93C     RCALL __pa_0
-00CE  E20B     BC 0xE6
-0346  D813     RCALL __pa_2
-0348  CFEE     MOVFF POSTINC0, __tmp_1
-034A  F011     NOP
-034C  CFEF     MOVFF INDF0, 0x12
-034E  F012     NOP
-0350  0100     MOVLB 0x0
-0352  51E7     MOVF l_full, W, BANKED
-0354  5C11     SUBWF __tmp_1, W, ACCESS
-0356  51E8     MOVF 0xE8, W, BANKED
-0358  5812     SUBWFB 0x12, W, ACCESS
-035A  0012     RETURN 0
-112:           				L_ptr->strobe[0] = l_full; // set to sliding lower limit
-00D0  D94E     RCALL __pa_2
+113:           			if (L_ptr->strobe[0] < l_full)
+00CC  D93B     RCALL __pa_0
+00CE  E20A     BC 0xE4
+0344  D813     RCALL __pa_2
+0346  CFEE     MOVFF POSTINC0, __tmp_1
+0348  F011     NOP
+034A  CFEF     MOVFF INDF0, 0x12
+034C  F012     NOP
+034E  0100     MOVLB 0x0
+0350  51E7     MOVF l_full, W, BANKED
+0352  5C11     SUBWF __tmp_1, W, ACCESS
+0354  51E8     MOVF 0xE8, W, BANKED
+0356  5812     SUBWFB 0x12, W, ACCESS
+0358  0012     RETURN 0
+114:           				L_ptr->strobe[0] = l_full; // set to sliding lower limit
+00D0  D94D     RCALL __pa_2
 00D2  C0E7     MOVFF l_full, POSTINC0
 00D4  FFEE     NOP
 00D6  C0E8     MOVFF 0xE8, POSTDEC0
 00D8  FFED     NOP
-113:           			break;
-00DA  D005     BRA 0xE6
-114:           		default:
-115:           			L_ptr->strobe[0] -= strobe_down;
-00B2  D95D     RCALL __pa_2
-00B4  D961     RCALL __pa_3
-0378  0E1F     MOVLW 0x1F
-037A  5EEE     SUBWF POSTINC0, F, ACCESS
-037C  0E00     MOVLW 0x0
-037E  5AED     SUBWFB POSTDEC0, F, ACCESS
-116:           			if (L_ptr->strobe[0] < l_full)
-00B6  E217     BC 0xE6
+115:           			break;
+00DA  D004     BRA 0xE4
+116:           		default:
+117:           			L_ptr->strobe[0] -= strobe_down;
+00B2  D95C     RCALL __pa_2
+00B4  D960     RCALL __pa_3
+0376  0E1F     MOVLW 0x1F
+0378  5EEE     SUBWF POSTINC0, F, ACCESS
+037A  0E00     MOVLW 0x0
+037C  5AED     SUBWFB POSTDEC0, F, ACCESS
+118:           			if (L_ptr->strobe[0] < l_full)
+00B6  E216     BC 0xE4
 00B8  D011     BRA 0xDC
-0380  EFA3     GOTO 0x346
-0382  F001     NOP
-117:           				L_ptr->strobe[0] = 65000; // set to upper limit
-00DC  D948     RCALL __pa_2
-00DE  0EE8     MOVLW 0xE8
+037E  EFA2     GOTO 0x344
+0380  F001     NOP
+119:           				L_ptr->strobe[0] = strobe_limit_h;
+00DC  D947     RCALL __pa_2
+00DE  0EFA     MOVLW 0xFA
 00E0  6EEE     MOVWF POSTINC0, ACCESS
-00E2  0EFD     MOVLW 0xFD
-00E4  6EED     MOVWF POSTDEC0, ACCESS
-118:           			break;
-119:           		}
-120:           
-121:           		V.line_num++;
-00E6  0E00     MOVLW 0x0
-00E8  6EE9     MOVWF FSR0, ACCESS
-00EA  0E00     MOVLW 0x0
-00EC  6EEA     MOVWF FSR0H, ACCESS
+00E2  68ED     SETF POSTDEC0, ACCESS
+120:           			break;
+121:           		}
+122:           
+123:           		V.line_num++;
+00E4  0E00     MOVLW 0x0
+00E6  6EE9     MOVWF FSR0, ACCESS
+00E8  0E00     MOVLW 0x0
+00EA  6EEA     MOVWF FSR0H, ACCESS
+00EC  52EE     MOVF POSTINC0, F, ACCESS
 00EE  52EE     MOVF POSTINC0, F, ACCESS
-00F0  52EE     MOVF POSTINC0, F, ACCESS
-00F2  74EF     BTG INDF0, 2, ACCESS
-122:           	}
-123:           
-124:           	if (PIR1bits.TMR1IF || l_state == 0) { //      Timer1 int handler 
-00F4  509E     MOVF PIR1, W, ACCESS
-00F6  0B01     ANDLW 0x1
-00F8  E103     BNZ 0x100
-00FA  0100     MOVLB 0x0
-00FC  51E6     MOVF l_state, W, BANKED
-00FE  E129     BNZ 0x152
-125:           		PIR1bits.TMR1IF = FALSE;
-0100  909E     BCF PIR1, 0, ACCESS
-126:           		WriteTimer1(L_ptr->strobe[l_state]); // strobe positioning during rotation
-0102  D935     RCALL __pa_2
-0104  C0D8     MOVFF L_ptr, __tmp_1
-0106  F011     NOP
-0108  C0D9     MOVFF 0xD9, 0x12
-010A  F012     NOP
-010C  0100     MOVLB 0x0
-010E  51E6     MOVF l_state, W, BANKED
-0110  0D02     MULLW 0x2
-0112  5011     MOVF __tmp_1, W, ACCESS
-0114  24F3     ADDWF PROD, W, ACCESS
-0116  6EE9     MOVWF FSR0, ACCESS
-0118  5012     MOVF 0x12, W, ACCESS
-011A  20F4     ADDWFC PRODH, W, ACCESS
-011C  6EEA     MOVWF FSR0H, ACCESS
-011E  CFEE     MOVFF POSTINC0, POSTINC1
-0120  FFE6     NOP
-0122  CFEF     MOVFF INDF0, POSTINC1
-0124  FFE6     NOP
-0126  EC69     CALL 0x6D2, 0
-0128  F003     NOP
+00F0  74EF     BTG INDF0, 2, ACCESS
+124:           	}
+125:           
+126:           	if (PIR1bits.TMR1IF || l_state == 0) { //      Timer1 int handler, for strobe timing
+00F2  509E     MOVF PIR1, W, ACCESS
+00F4  0B01     ANDLW 0x1
+00F6  E103     BNZ 0xFE
+00F8  0100     MOVLB 0x0
+00FA  51E6     MOVF l_state, W, BANKED
+00FC  E129     BNZ 0x150
+127:           		PIR1bits.TMR1IF = FALSE;
+00FE  909E     BCF PIR1, 0, ACCESS
+128:           		WriteTimer1(L_ptr->strobe[l_state]); // strobe positioning during rotation
+0100  D935     RCALL __pa_2
+0102  C0D8     MOVFF L_ptr, __tmp_1
+0104  F011     NOP
+0106  C0D9     MOVFF 0xD9, 0x12
+0108  F012     NOP
+010A  0100     MOVLB 0x0
+010C  51E6     MOVF l_state, W, BANKED
+010E  0D02     MULLW 0x2
+0110  5011     MOVF __tmp_1, W, ACCESS
+0112  24F3     ADDWF PROD, W, ACCESS
+0114  6EE9     MOVWF FSR0, ACCESS
+0116  5012     MOVF 0x12, W, ACCESS
+0118  20F4     ADDWFC PRODH, W, ACCESS
+011A  6EEA     MOVWF FSR0H, ACCESS
+011C  CFEE     MOVFF POSTINC0, POSTINC1
+011E  FFE6     NOP
+0120  CFEF     MOVFF INDF0, POSTINC1
+0122  FFE6     NOP
+0124  EC68     CALL 0x6D0, 0
+0126  F003     NOP
+0128  52E5     MOVF POSTDEC1, F, ACCESS
 012A  52E5     MOVF POSTDEC1, F, ACCESS
-012C  52E5     MOVF POSTDEC1, F, ACCESS
-127:           
-128:           		switch (l_state) {
-012E  0100     MOVLB 0x0
-0130  51E6     MOVF l_state, W, BANKED
-0132  0A02     XORLW 0x2
-0134  E00B     BZ 0x14C
-0136  0A03     XORLW 0x3
-0138  E005     BZ 0x144
-013A  0A01     XORLW 0x1
-013C  E109     BNZ 0x150
-129:           		case 0:
-130:           			G_OUT = 0;
-013E  9089     BCF LATA, 0, ACCESS
-131:           			l_state = 1; // off time
-0140  0E01     MOVLW 0x1
-132:           			break;
-0142  D002     BRA 0x148
-133:           		case 1:
-134:           			G_OUT = 1;
-0144  8089     BSF LATA, 0, ACCESS
-135:           			l_state = 2; // on start time
-0146  0E02     MOVLW 0x2
-0148  6FE6     MOVWF l_state, BANKED
-136:           			break;
-014A  D003     BRA 0x152
-137:           		case 2:
-138:           			G_OUT = 0; // wait to next rotation
-014C  9089     BCF LATA, 0, ACCESS
-139:           			break;
-014E  D001     BRA 0x152
-140:           		default:
-141:           			G_OUT = 0;
-0150  9089     BCF LATA, 0, ACCESS
-142:           			break;
-143:           		}
-144:           	}
-145:           
-146:           	if (PIR1bits.RCIF) { // is data from RS-232 port
-0152  AA9E     BTFSS PIR1, 5, ACCESS
-0154  D007     BRA 0x164
-147:           		V.rx_data = RCREG;
-0156  50AE     MOVF RCREG, W, ACCESS
-0158  6E03     MOVWF 0x3, ACCESS
-148:           		if (RCSTAbits.OERR) {
-015A  A2AB     BTFSS RCSTA, 1, ACCESS
-015C  D002     BRA 0x162
-149:           			RCSTAbits.CREN = 0; // clear overrun
-015E  98AB     BCF RCSTA, 4, ACCESS
-150:           			RCSTAbits.CREN = 1; // re-enable
-0160  88AB     BSF RCSTA, 4, ACCESS
-151:           		}
-152:           		V.comm = TRUE;
-0162  8200     BSF timer, 1, ACCESS
-153:           	}
-154:           
-155:           
-156:           	if (INTCONbits.TMR0IF) { //      check timer0 
-0164  A4F2     BTFSS INTCON, 2, ACCESS
-0166  D003     BRA 0x16E
-157:           		INTCONbits.TMR0IF = FALSE; //      clear interrupt flag
-0168  94F2     BCF INTCON, 2, ACCESS
-158:           		WriteTimer0(timer0_off);
-016A  D8F8     RCALL __pa_1
-035C  C0E4     MOVFF timer0_off, POSTINC1
-035E  FFE6     NOP
-0360  C0E5     MOVFF 0xE5, POSTINC1
-0362  FFE6     NOP
-0364  EC85     CALL 0x70A, 0
-0366  F003     NOP
+129:           
+130:           		switch (l_state) {
+012C  0100     MOVLB 0x0
+012E  51E6     MOVF l_state, W, BANKED
+0130  0A02     XORLW 0x2
+0132  E00B     BZ 0x14A
+0134  0A03     XORLW 0x3
+0136  E005     BZ 0x142
+0138  0A01     XORLW 0x1
+013A  E109     BNZ 0x14E
+131:           		case 0:
+132:           			G_OUT = 0;
+013C  9089     BCF LATA, 0, ACCESS
+133:           			l_state = 1; // off time after index to start time
+013E  0E01     MOVLW 0x1
+134:           			break;
+0140  D002     BRA 0x146
+135:           		case 1:
+136:           			G_OUT = 1;
+0142  8089     BSF LATA, 0, ACCESS
+137:           			l_state = 2; // on start time duration for strobe pulse
+0144  0E02     MOVLW 0x2
+0146  6FE6     MOVWF l_state, BANKED
+138:           			break;
+0148  D003     BRA 0x150
+139:           		case 2:
+140:           			G_OUT = 0; // wait to next rotation
+014A  9089     BCF LATA, 0, ACCESS
+141:           			break;
+014C  D001     BRA 0x150
+142:           		default:
+143:           			G_OUT = 0;
+014E  9089     BCF LATA, 0, ACCESS
+144:           			break;
+145:           		}
+146:           	}
+147:           
+148:           	if (PIR1bits.RCIF) { // is data from RS-232 port
+0150  AA9E     BTFSS PIR1, 5, ACCESS
+0152  D007     BRA 0x162
+149:           		V.rx_data = RCREG;
+0154  50AE     MOVF RCREG, W, ACCESS
+0156  6E03     MOVWF 0x3, ACCESS
+150:           		if (RCSTAbits.OERR) {
+0158  A2AB     BTFSS RCSTA, 1, ACCESS
+015A  D002     BRA 0x160
+151:           			RCSTAbits.CREN = 0; // clear overrun
+015C  98AB     BCF RCSTA, 4, ACCESS
+152:           			RCSTAbits.CREN = 1; // re-enable
+015E  88AB     BSF RCSTA, 4, ACCESS
+153:           		}
+154:           		V.comm = TRUE;
+0160  8200     BSF timer, 1, ACCESS
+155:           	}
+156:           
+157:           
+158:           	if (INTCONbits.TMR0IF) { //      check timer0 
+0162  A4F2     BTFSS INTCON, 2, ACCESS
+0164  D003     BRA 0x16C
+159:           		INTCONbits.TMR0IF = FALSE; //      clear interrupt flag
+0166  94F2     BCF INTCON, 2, ACCESS
+160:           		WriteTimer0(timer0_off);
+0168  D8F8     RCALL __pa_1
+035A  C0E4     MOVFF timer0_off, POSTINC1
+035C  FFE6     NOP
+035E  C0E5     MOVFF 0xE5, POSTINC1
+0360  FFE6     NOP
+0362  EC84     CALL 0x708, 0
+0364  F003     NOP
+0366  52E5     MOVF POSTDEC1, F, ACCESS
 0368  52E5     MOVF POSTDEC1, F, ACCESS
-036A  52E5     MOVF POSTDEC1, F, ACCESS
-036C  0012     RETURN 0
-159:           		LED5 = !LED5; // active LED blinker
-016C  7E8A     BTG LATB, 7, ACCESS
-160:           	}
-161:           
-162:           }
-016E  52E5     MOVF POSTDEC1, F, ACCESS
-0170  EE00     LFSR 0, 0x16
-0172  F016     NOP
-0174  0E02     MOVLW 0x2
-0176  04E8     DECF WREG, W, ACCESS
-0178  E303     BNC 0x180
-017A  CFE5     MOVFF POSTDEC1, POSTDEC0
-017C  FFED     NOP
-017E  D7FB     BRA 0x176
-0180  EE00     LFSR 0, 0x14
-0182  F014     NOP
-0184  0E02     MOVLW 0x2
-0186  04E8     DECF WREG, W, ACCESS
-0188  E303     BNC 0x190
-018A  CFE5     MOVFF POSTDEC1, POSTDEC0
-018C  FFED     NOP
-018E  D7FB     BRA 0x186
-0190  CFE5     MOVFF POSTDEC1, PCLATU
-0192  FFFB     NOP
-0194  CFE5     MOVFF POSTDEC1, PCLATH
-0196  FFFA     NOP
-0198  CFE5     MOVFF POSTDEC1, PRODH
-019A  FFF4     NOP
-019C  CFE5     MOVFF POSTDEC1, PROD
-019E  FFF3     NOP
-01A0  CFE5     MOVFF POSTDEC1, TABLAT
-01A2  FFF5     NOP
-01A4  CFE5     MOVFF POSTDEC1, TBLPTRU
-01A6  FFF8     NOP
-01A8  CFE5     MOVFF POSTDEC1, TBLPTRH
-01AA  FFF7     NOP
-01AC  CFE5     MOVFF POSTDEC1, TBLPTR
-01AE  FFF6     NOP
-01B0  CFE5     MOVFF POSTDEC1, FSR0H
-01B2  FFEA     NOP
-01B4  CFE5     MOVFF POSTDEC1, FSR0
-01B6  FFE9     NOP
-01B8  CFE5     MOVFF POSTDEC1, FSR2H
-01BA  FFDA     NOP
-01BC  0011     RETFIE 1
+036A  0012     RETURN 0
+161:           		LED5 = !LED5; // active LED blinker
+016A  7E8A     BTG LATB, 7, ACCESS
+162:           	}
 163:           
-164:           /* main loop routine */
-165:           int16_t sw_work(void)
-166:           {
-167:           
-168:           	ClrWdt(); // reset watchdog
-01BE  0004     CLRWDT
-169:           
-170:           	if (!SW1) {
-01C0  B880     BTFSC PORTA, 4, ACCESS
-01C2  D048     BRA 0x254
-171:           		putrsUSART("Timer limit ");
-01C4  0EF1     MOVLW 0xF1
-01C6  6EE6     MOVWF POSTINC1, ACCESS
-01C8  0E07     MOVLW 0x7
-01CA  6EE6     MOVWF POSTINC1, ACCESS
-01CC  0E00     MOVLW 0x0
-01CE  6EE6     MOVWF POSTINC1, ACCESS
-01D0  ECF0     CALL 0x5E0, 0
-01D2  F002     NOP
+164:           }
+016C  52E5     MOVF POSTDEC1, F, ACCESS
+016E  EE00     LFSR 0, 0x16
+0170  F016     NOP
+0172  0E02     MOVLW 0x2
+0174  04E8     DECF WREG, W, ACCESS
+0176  E303     BNC 0x17E
+0178  CFE5     MOVFF POSTDEC1, POSTDEC0
+017A  FFED     NOP
+017C  D7FB     BRA 0x174
+017E  EE00     LFSR 0, 0x14
+0180  F014     NOP
+0182  0E02     MOVLW 0x2
+0184  04E8     DECF WREG, W, ACCESS
+0186  E303     BNC 0x18E
+0188  CFE5     MOVFF POSTDEC1, POSTDEC0
+018A  FFED     NOP
+018C  D7FB     BRA 0x184
+018E  CFE5     MOVFF POSTDEC1, PCLATU
+0190  FFFB     NOP
+0192  CFE5     MOVFF POSTDEC1, PCLATH
+0194  FFFA     NOP
+0196  CFE5     MOVFF POSTDEC1, PRODH
+0198  FFF4     NOP
+019A  CFE5     MOVFF POSTDEC1, PROD
+019C  FFF3     NOP
+019E  CFE5     MOVFF POSTDEC1, TABLAT
+01A0  FFF5     NOP
+01A2  CFE5     MOVFF POSTDEC1, TBLPTRU
+01A4  FFF8     NOP
+01A6  CFE5     MOVFF POSTDEC1, TBLPTRH
+01A8  FFF7     NOP
+01AA  CFE5     MOVFF POSTDEC1, TBLPTR
+01AC  FFF6     NOP
+01AE  CFE5     MOVFF POSTDEC1, FSR0H
+01B0  FFEA     NOP
+01B2  CFE5     MOVFF POSTDEC1, FSR0
+01B4  FFE9     NOP
+01B6  CFE5     MOVFF POSTDEC1, FSR2H
+01B8  FFDA     NOP
+01BA  0011     RETFIE 1
+165:           
+166:           /* main loop routine */
+167:           int16_t sw_work(void)
+168:           {
+169:           	ClrWdt(); // reset watchdog
+01BC  0004     CLRWDT
+170:           
+171:           	if (!SW1) {
+01BE  B880     BTFSC PORTA, 4, ACCESS
+01C0  D048     BRA 0x252
+172:           		putrsUSART("Timer limit ");
+01C2  0EEF     MOVLW 0xEF
+01C4  6EE6     MOVWF POSTINC1, ACCESS
+01C6  0E07     MOVLW 0x7
+01C8  6EE6     MOVWF POSTINC1, ACCESS
+01CA  0E00     MOVLW 0x0
+01CC  6EE6     MOVWF POSTINC1, ACCESS
+01CE  ECEF     CALL 0x5DE, 0
+01D0  F002     NOP
+01D2  52E5     MOVF POSTDEC1, F, ACCESS
 01D4  52E5     MOVF POSTDEC1, F, ACCESS
 01D6  52E5     MOVF POSTDEC1, F, ACCESS
-01D8  52E5     MOVF POSTDEC1, F, ACCESS
-172:           		itoa(l_full, str);
-01DA  0EC0     MOVLW 0xC0
-01DC  6EE6     MOVWF POSTINC1, ACCESS
-01DE  0E00     MOVLW 0x0
-01E0  6EE6     MOVWF POSTINC1, ACCESS
-01E2  C0E7     MOVFF l_full, POSTINC1
-01E4  FFE6     NOP
-01E6  C0E8     MOVFF 0xE8, POSTINC1
-01E8  FFE6     NOP
-01EA  ECC2     CALL 0x384, 0
-01EC  F001     NOP
+173:           		itoa(l_full, str);
+01D8  0EC0     MOVLW 0xC0
+01DA  6EE6     MOVWF POSTINC1, ACCESS
+01DC  0E00     MOVLW 0x0
+01DE  6EE6     MOVWF POSTINC1, ACCESS
+01E0  C0E7     MOVFF l_full, POSTINC1
+01E2  FFE6     NOP
+01E4  C0E8     MOVFF 0xE8, POSTINC1
+01E6  FFE6     NOP
+01E8  ECC1     CALL 0x382, 0
+01EA  F001     NOP
+01EC  52E5     MOVF POSTDEC1, F, ACCESS
 01EE  52E5     MOVF POSTDEC1, F, ACCESS
 01F0  52E5     MOVF POSTDEC1, F, ACCESS
 01F2  52E5     MOVF POSTDEC1, F, ACCESS
-01F4  52E5     MOVF POSTDEC1, F, ACCESS
-173:           		putsUSART(str);
-01F6  0EC0     MOVLW 0xC0
-01F8  6EE6     MOVWF POSTINC1, ACCESS
-01FA  0E00     MOVLW 0x0
-01FC  6EE6     MOVWF POSTINC1, ACCESS
-01FE  EC22     CALL 0x644, 0
-0200  F003     NOP
+174:           		putsUSART(str);
+01F4  0EC0     MOVLW 0xC0
+01F6  6EE6     MOVWF POSTINC1, ACCESS
+01F8  0E00     MOVLW 0x0
+01FA  6EE6     MOVWF POSTINC1, ACCESS
+01FC  EC21     CALL 0x642, 0
+01FE  F003     NOP
+0200  52E5     MOVF POSTDEC1, F, ACCESS
 0202  52E5     MOVF POSTDEC1, F, ACCESS
-0204  52E5     MOVF POSTDEC1, F, ACCESS
-174:           		putrsUSART("Timer value ");
-0206  0EE4     MOVLW 0xE4
-0208  6EE6     MOVWF POSTINC1, ACCESS
-020A  0E07     MOVLW 0x7
-020C  6EE6     MOVWF POSTINC1, ACCESS
-020E  0E00     MOVLW 0x0
-0210  6EE6     MOVWF POSTINC1, ACCESS
-0212  ECF0     CALL 0x5E0, 0
-0214  F002     NOP
+175:           		putrsUSART("Timer value ");
+0204  0EE2     MOVLW 0xE2
+0206  6EE6     MOVWF POSTINC1, ACCESS
+0208  0E07     MOVLW 0x7
+020A  6EE6     MOVWF POSTINC1, ACCESS
+020C  0E00     MOVLW 0x0
+020E  6EE6     MOVWF POSTINC1, ACCESS
+0210  ECEF     CALL 0x5DE, 0
+0212  F002     NOP
+0214  52E5     MOVF POSTDEC1, F, ACCESS
 0216  52E5     MOVF POSTDEC1, F, ACCESS
 0218  52E5     MOVF POSTDEC1, F, ACCESS
-021A  52E5     MOVF POSTDEC1, F, ACCESS
-175:           		itoa(L_ptr->strobe[0], str);
-021C  0EC0     MOVLW 0xC0
-021E  6EE6     MOVWF POSTINC1, ACCESS
-0220  0E00     MOVLW 0x0
-0222  6EE6     MOVWF POSTINC1, ACCESS
-0224  C0D8     MOVFF L_ptr, FSR0
-0226  FFE9     NOP
-0228  C0D9     MOVFF 0xD9, FSR0H
-022A  FFEA     NOP
-022C  CFEE     MOVFF POSTINC0, POSTINC1
-022E  FFE6     NOP
-0230  CFEF     MOVFF INDF0, POSTINC1
-0232  FFE6     NOP
-0234  ECC2     CALL 0x384, 0
-0236  F001     NOP
+176:           		itoa(L_ptr->strobe[0], str);
+021A  0EC0     MOVLW 0xC0
+021C  6EE6     MOVWF POSTINC1, ACCESS
+021E  0E00     MOVLW 0x0
+0220  6EE6     MOVWF POSTINC1, ACCESS
+0222  C0D8     MOVFF L_ptr, FSR0
+0224  FFE9     NOP
+0226  C0D9     MOVFF 0xD9, FSR0H
+0228  FFEA     NOP
+022A  CFEE     MOVFF POSTINC0, POSTINC1
+022C  FFE6     NOP
+022E  CFEF     MOVFF INDF0, POSTINC1
+0230  FFE6     NOP
+0232  ECC1     CALL 0x382, 0
+0234  F001     NOP
+0236  52E5     MOVF POSTDEC1, F, ACCESS
 0238  52E5     MOVF POSTDEC1, F, ACCESS
 023A  52E5     MOVF POSTDEC1, F, ACCESS
 023C  52E5     MOVF POSTDEC1, F, ACCESS
-023E  52E5     MOVF POSTDEC1, F, ACCESS
-176:           		putsUSART(str);
-0240  0EC0     MOVLW 0xC0
-0242  6EE6     MOVWF POSTINC1, ACCESS
-0244  0E00     MOVLW 0x0
-0246  6EE6     MOVWF POSTINC1, ACCESS
-0248  EC22     CALL 0x644, 0
-024A  F003     NOP
+177:           		putsUSART(str);
+023E  0EC0     MOVLW 0xC0
+0240  6EE6     MOVWF POSTINC1, ACCESS
+0242  0E00     MOVLW 0x0
+0244  6EE6     MOVWF POSTINC1, ACCESS
+0246  EC21     CALL 0x642, 0
+0248  F003     NOP
+024A  52E5     MOVF POSTDEC1, F, ACCESS
 024C  52E5     MOVF POSTDEC1, F, ACCESS
-024E  52E5     MOVF POSTDEC1, F, ACCESS
-177:           		LED1 = 1;
-0250  8689     BSF LATA, 3, ACCESS
-178:           	} else {
-0252  D001     BRA 0x256
-179:           		LED1 = 0;
-0254  9689     BCF LATA, 3, ACCESS
-180:           	}
-181:           
-182:           	return 0;
-0256  6AF3     CLRF PROD, ACCESS
-0258  6AF4     CLRF PRODH, ACCESS
-025A  D000     BRA 0x25C
-183:           }
-025C  0012     RETURN 0
-184:           
-185:           void init_rmsmon(void)
-186:           {
-187:           	/*
-188:           	 * check for a clean POR
-189:           	 */
-190:           	V.boot_code = FALSE;
-025E  9202     BCF 0x2, 1, ACCESS
-191:           	if (RCON != 0b0011100)
-0260  0E1C     MOVLW 0x1C
-0262  5CD0     SUBWF RCON, W, ACCESS
-0264  E001     BZ 0x268
-192:           		V.boot_code = TRUE;
-0266  8202     BSF 0x2, 1, ACCESS
-193:           
-194:           	if (STKPTRbits.STKFUL || STKPTRbits.STKUNF) {
-0268  50FC     MOVF STKPTR, W, ACCESS
-026A  0B80     ANDLW 0x80
-026C  E103     BNZ 0x274
-026E  50FC     MOVF STKPTR, W, ACCESS
-0270  0B40     ANDLW 0x40
-0272  E003     BZ 0x27A
-195:           		V.boot_code = TRUE;
-0274  8202     BSF 0x2, 1, ACCESS
-196:           		STKPTRbits.STKFUL = 0;
-0276  9EFC     BCF STKPTR, 7, ACCESS
-197:           		STKPTRbits.STKUNF = 0;
-0278  9CFC     BCF STKPTR, 6, ACCESS
-198:           	}
-199:           
-200:           	ADCON1 = 0x7F; // all digital, no ADC
-027A  0E7F     MOVLW 0x7F
-027C  6EC1     MOVWF ADCON1, ACCESS
-201:           	/* interrupt priority ON */
-202:           	RCONbits.IPEN = 1;
-027E  8ED0     BSF RCON, 7, ACCESS
-203:           	/* define I/O ports */
-204:           	RMSPORTA = RMSPORT_IOA;
-0280  0E10     MOVLW 0x10
-0282  6E92     MOVWF TRISA, ACCESS
-205:           	RMSPORTB = RMSPORT_IOB;
-0284  0E11     MOVLW 0x11
-0286  6E93     MOVWF TRISB, ACCESS
-206:           
-207:           	G_OUT = LEDON; // preset all LEDS
-0288  9089     BCF LATA, 0, ACCESS
-208:           	LED1 = LEDON;
+178:           		LED1 = 1;
+024E  8689     BSF LATA, 3, ACCESS
+179:           	} else {
+0250  D001     BRA 0x254
+180:           		LED1 = 0;
+0252  9689     BCF LATA, 3, ACCESS
+181:           	}
+182:           
+183:           	return 0;
+0254  6AF3     CLRF PROD, ACCESS
+0256  6AF4     CLRF PRODH, ACCESS
+0258  D000     BRA 0x25A
+184:           }
+025A  0012     RETURN 0
+185:           
+186:           void init_rmsmon(void)
+187:           {
+188:           	/*
+189:           	 * check for a clean POR
+190:           	 */
+191:           	V.boot_code = FALSE;
+025C  9202     BCF 0x2, 1, ACCESS
+192:           	if (RCON != 0b0011100)
+025E  0E1C     MOVLW 0x1C
+0260  5CD0     SUBWF RCON, W, ACCESS
+0262  E001     BZ 0x266
+193:           		V.boot_code = TRUE;
+0264  8202     BSF 0x2, 1, ACCESS
+194:           
+195:           	if (STKPTRbits.STKFUL || STKPTRbits.STKUNF) {
+0266  50FC     MOVF STKPTR, W, ACCESS
+0268  0B80     ANDLW 0x80
+026A  E103     BNZ 0x272
+026C  50FC     MOVF STKPTR, W, ACCESS
+026E  0B40     ANDLW 0x40
+0270  E003     BZ 0x278
+196:           		V.boot_code = TRUE;
+0272  8202     BSF 0x2, 1, ACCESS
+197:           		STKPTRbits.STKFUL = 0;
+0274  9EFC     BCF STKPTR, 7, ACCESS
+198:           		STKPTRbits.STKUNF = 0;
+0276  9CFC     BCF STKPTR, 6, ACCESS
+199:           	}
+200:           
+201:           	ADCON1 = 0x7F; // all digital, no ADC
+0278  0E7F     MOVLW 0x7F
+027A  6EC1     MOVWF ADCON1, ACCESS
+202:           	/* interrupt priority ON */
+203:           	RCONbits.IPEN = 1;
+027C  8ED0     BSF RCON, 7, ACCESS
+204:           	/* define I/O ports */
+205:           	RMSPORTA = RMSPORT_IOA;
+027E  0E10     MOVLW 0x10
+0280  6E92     MOVWF TRISA, ACCESS
+206:           	RMSPORTB = RMSPORT_IOB;
+0282  0E11     MOVLW 0x11
+0284  6E93     MOVWF TRISB, ACCESS
+207:           
+208:           	G_OUT = LEDON; // preset all LEDS
+0286  9089     BCF LATA, 0, ACCESS
+209:           	LED1 = LEDON;
+0288  9689     BCF LATA, 3, ACCESS
+210:           	LED2 = LEDON;
 028A  9689     BCF LATA, 3, ACCESS
-209:           	LED2 = LEDON;
+211:           	LED3 = LEDON;
 028C  9689     BCF LATA, 3, ACCESS
-210:           	LED3 = LEDON;
-028E  9689     BCF LATA, 3, ACCESS
-211:           	LED4 = LEDON;
-0290  9C8A     BCF LATB, 6, ACCESS
-212:           	LED5 = LEDON;
-0292  9E8A     BCF LATB, 7, ACCESS
-213:           	LED6 = LEDON;
-0294  9C89     BCF LATA, 6, ACCESS
-214:           	RPMLED = LEDON;
-0296  9A8A     BCF LATB, 5, ACCESS
-215:           	timer0_off = TIMEROFFSET; // blink fast
-0298  0100     MOVLB 0x0
-029A  0E50     MOVLW 0x50
-029C  6FE4     MOVWF timer0_off, BANKED
-029E  0E46     MOVLW 0x46
-02A0  6FE5     MOVWF 0xE5, BANKED
-216:           	OpenTimer0(TIMER_INT_ON & T0_16BIT & T0_SOURCE_INT & T0_PS_1_256); // led blinker
-02A2  0E97     MOVLW 0x97
-02A4  6EE6     MOVWF POSTINC1, ACCESS
-02A6  ECA1     CALL 0x742, 0
-02A8  F003     NOP
-02AA  52E5     MOVF POSTDEC1, F, ACCESS
-217:           	WriteTimer0(timer0_off); //	start timer0 at ~1/2 second ticks
-02AC  D857     RCALL __pa_1
-218:           	OpenTimer1(TIMER_INT_ON & T1_16BIT_RW & T1_SOURCE_INT & T1_PS_1_2 & T1_OSC1EN_OFF & T1_SYNC_EXT_OFF); // strobe position clock
-02AE  0ED5     MOVLW 0xD5
-02B0  6EE6     MOVWF POSTINC1, ACCESS
-02B2  EC48     CALL 0x690, 0
-02B4  F003     NOP
-02B6  52E5     MOVF POSTDEC1, F, ACCESS
-219:           	WriteTimer1(SAMPLEFREQ);
-02B8  0EF2     MOVLW 0xF2
-02BA  6EE6     MOVWF POSTINC1, ACCESS
-02BC  0EFE     MOVLW 0xFE
-02BE  6EE6     MOVWF POSTINC1, ACCESS
-02C0  EC69     CALL 0x6D2, 0
-02C2  F003     NOP
+212:           	LED4 = LEDON;
+028E  9C8A     BCF LATB, 6, ACCESS
+213:           	LED5 = LEDON;
+0290  9E8A     BCF LATB, 7, ACCESS
+214:           	LED6 = LEDON;
+0292  9C89     BCF LATA, 6, ACCESS
+215:           	RPMLED = LEDON;
+0294  9A8A     BCF LATB, 5, ACCESS
+216:           	timer0_off = TIMEROFFSET; // blink fast
+0296  0100     MOVLB 0x0
+0298  0E50     MOVLW 0x50
+029A  6FE4     MOVWF timer0_off, BANKED
+029C  0E46     MOVLW 0x46
+029E  6FE5     MOVWF 0xE5, BANKED
+217:           	OpenTimer0(TIMER_INT_ON & T0_16BIT & T0_SOURCE_INT & T0_PS_1_256); // led blinker
+02A0  0E97     MOVLW 0x97
+02A2  6EE6     MOVWF POSTINC1, ACCESS
+02A4  ECA0     CALL 0x740, 0
+02A6  F003     NOP
+02A8  52E5     MOVF POSTDEC1, F, ACCESS
+218:           	WriteTimer0(timer0_off); //	start timer0 at ~1/2 second ticks
+02AA  D857     RCALL __pa_1
+219:           	OpenTimer1(TIMER_INT_ON & T1_16BIT_RW & T1_SOURCE_INT & T1_PS_1_2 & T1_OSC1EN_OFF & T1_SYNC_EXT_OFF); // strobe position clock
+02AC  0ED5     MOVLW 0xD5
+02AE  6EE6     MOVWF POSTINC1, ACCESS
+02B0  EC47     CALL 0x68E, 0
+02B2  F003     NOP
+02B4  52E5     MOVF POSTDEC1, F, ACCESS
+220:           	WriteTimer1(SAMPLEFREQ);
+02B6  0E60     MOVLW 0x60
+02B8  6EE6     MOVWF POSTINC1, ACCESS
+02BA  0EEA     MOVLW 0xEA
+02BC  6EE6     MOVWF POSTINC1, ACCESS
+02BE  EC68     CALL 0x6D0, 0
+02C0  F003     NOP
+02C2  52E5     MOVF POSTDEC1, F, ACCESS
 02C4  52E5     MOVF POSTDEC1, F, ACCESS
-02C6  52E5     MOVF POSTDEC1, F, ACCESS
-220:           	/* data link */
-221:           	COMM_ENABLE = TRUE; // for PICDEM4 onboard RS-232, not used on custom board
-02C8  868A     BSF LATB, 3, ACCESS
-222:           	OpenUSART(USART_TX_INT_OFF &
-223:           		USART_RX_INT_ON &
-224:           		USART_ASYNCH_MODE &
-225:           		USART_EIGHT_BIT &
-226:           		USART_CONT_RX, 64); // 40MHz fosc 9600
-02CA  0E40     MOVLW 0x40
-02CC  6EE6     MOVWF POSTINC1, ACCESS
-02CE  6AE6     CLRF POSTINC1, ACCESS
-02D0  0E7C     MOVLW 0x7C
-02D2  6EE6     MOVWF POSTINC1, ACCESS
-02D4  ECAB     CALL 0x556, 0
-02D6  F002     NOP
+221:           	/* data link */
+222:           	COMM_ENABLE = TRUE; // for PICDEM4 onboard RS-232, not used on custom board
+02C6  868A     BSF LATB, 3, ACCESS
+223:           	OpenUSART(USART_TX_INT_OFF &
+224:           		USART_RX_INT_ON &
+225:           		USART_ASYNCH_MODE &
+226:           		USART_EIGHT_BIT &
+227:           		USART_CONT_RX, 64); // 40MHz fosc 9600
+02C8  0E40     MOVLW 0x40
+02CA  6EE6     MOVWF POSTINC1, ACCESS
+02CC  6AE6     CLRF POSTINC1, ACCESS
+02CE  0E7C     MOVLW 0x7C
+02D0  6EE6     MOVWF POSTINC1, ACCESS
+02D2  ECAA     CALL 0x554, 0
+02D4  F002     NOP
+02D6  52E5     MOVF POSTDEC1, F, ACCESS
 02D8  52E5     MOVF POSTDEC1, F, ACCESS
 02DA  52E5     MOVF POSTDEC1, F, ACCESS
-02DC  52E5     MOVF POSTDEC1, F, ACCESS
-227:           	TXSTAbits.SYNC = 0;
-02DE  98AC     BCF TXSTA, 4, ACCESS
-228:           	TXSTAbits.BRGH = 0;
-02E0  94AC     BCF TXSTA, 2, ACCESS
-229:           	BAUDCTLbits.BRG16 = 0;
-02E2  96AA     BCF BAUDCTL, 3, ACCESS
-230:           	SPBRG = 64;
-02E4  0E40     MOVLW 0x40
-02E6  6EAF     MOVWF SPBRG, ACCESS
-231:           
-232:           	/*      work int thread setup */
-233:           	INTCONbits.TMR0IE = 1; // enable int
-02E8  8AF2     BSF INTCON, 5, ACCESS
-234:           	INTCON2bits.TMR0IP = 1; // make it high level
-02EA  84F1     BSF INTCON2, 2, ACCESS
-235:           
-236:           	PIE1bits.TMR1IE = 1; // enable int
-02EC  809D     BSF PIE1, 0, ACCESS
-237:           	IPR1bits.TMR1IP = 1; // make it high level
-02EE  809F     BSF IPR1, 0, ACCESS
-238:           
-239:           	INTCONbits.INT0IE = 1; // enable RPM sensor input
-02F0  88F2     BSF INTCON, 4, ACCESS
-240:           	INTCON2bits.RBPU = 0; // enable weak pull-ups
-02F2  9EF1     BCF INTCON2, 7, ACCESS
-241:           
-242:           	init_rms_params();
-02F4  D802     RCALL init_rms_params
-243:           
-244:           	/* Enable all high priority interrupts */
-245:           	INTCONbits.GIEH = 1;
-02F6  8EF2     BSF INTCON, 7, ACCESS
-246:           }
-02F8  0012     RETURN 0
-247:           
-248:           uint8_t init_rms_params(void)
-249:           {
-250:           	V.spinning = FALSE;
-02FA  9002     BCF 0x2, 0, ACCESS
-251:           	V.valid = TRUE;
-02FC  8000     BSF timer, 0, ACCESS
-252:           	V.comm = FALSE;
-02FE  9200     BCF timer, 1, ACCESS
-253:           	V.comm_state = 0;
-0300  6A01     CLRF 0x1, ACCESS
-254:           	V.line_num = 0;
-0302  9402     BCF 0x2, 2, ACCESS
-255:           
-256:           	L_ptr = &L[0];
-0304  0100     MOVLB 0x0
-0306  0E05     MOVLW 0x5
-0308  6FD8     MOVWF L_ptr, BANKED
-030A  0E00     MOVLW 0x0
-030C  6FD9     MOVWF 0xD9, BANKED
-257:           	/* two line strobes */
-258:           	L[0].strobe[0] = 60000;
-030E  0E60     MOVLW 0x60
-0310  6E05     MOVWF L, ACCESS
-0312  0EEA     MOVLW 0xEA
-0314  6E06     MOVWF 0x6, ACCESS
-259:           	L[0].strobe[1] = 64300;
-0316  0E2C     MOVLW 0x2C
-0318  6E07     MOVWF 0x7, ACCESS
-031A  0EFB     MOVLW 0xFB
-031C  6E08     MOVWF 0x8, ACCESS
-260:           	L[0].strobe[2] = 10000;
-031E  0E10     MOVLW 0x10
-0320  6E09     MOVWF 0x9, ACCESS
-0322  0E27     MOVLW 0x27
-0324  6E0A     MOVWF 0xA, ACCESS
-261:           	L[1].strobe[0] = 50000; // 62000
-0326  0E50     MOVLW 0x50
-0328  6E0B     MOVWF 0xB, ACCESS
-032A  0EC3     MOVLW 0xC3
-032C  6E0C     MOVWF 0xC, ACCESS
-262:           	L[1].strobe[1] = 64300;
-032E  0E2C     MOVLW 0x2C
-0330  6E0D     MOVWF 0xD, ACCESS
-0332  0EFB     MOVLW 0xFB
-0334  6E0E     MOVWF 0xE, ACCESS
-263:           	L[1].strobe[2] = 10000;
-0336  0E10     MOVLW 0x10
-0338  6E0F     MOVWF 0xF, ACCESS
-033A  0E27     MOVLW 0x27
-033C  6E10     MOVWF 0x10, ACCESS
-264:           	return 0;
-265:           }
-033E  0C00     RETLW 0x0
-266:           
-267:           void main(void)
-268:           {
-269:           	init_rmsmon();
-0340  DF8E     RCALL init_rmsmon
-270:           
-271:           	/* Loop forever */
-272:           	while (TRUE) { // busy work
-0344  D7FE     BRA 0x342
-273:           		sw_work(); // run housekeeping
-0342  DF3D     RCALL sw_work
-274:           	}
-275:           }
+228:           	TXSTAbits.SYNC = 0;
+02DC  98AC     BCF TXSTA, 4, ACCESS
+229:           	TXSTAbits.BRGH = 0;
+02DE  94AC     BCF TXSTA, 2, ACCESS
+230:           	BAUDCTLbits.BRG16 = 0;
+02E0  96AA     BCF BAUDCTL, 3, ACCESS
+231:           	SPBRG = 64;
+02E2  0E40     MOVLW 0x40
+02E4  6EAF     MOVWF SPBRG, ACCESS
+232:           
+233:           	/*      work int thread setup */
+234:           	INTCONbits.TMR0IE = 1; // enable int
+02E6  8AF2     BSF INTCON, 5, ACCESS
+235:           	INTCON2bits.TMR0IP = 1; // make it high level
+02E8  84F1     BSF INTCON2, 2, ACCESS
+236:           
+237:           	PIE1bits.TMR1IE = 1; // enable int
+02EA  809D     BSF PIE1, 0, ACCESS
+238:           	IPR1bits.TMR1IP = 1; // make it high level
+02EC  809F     BSF IPR1, 0, ACCESS
+239:           
+240:           	INTCONbits.INT0IE = 1; // enable RPM sensor input
+02EE  88F2     BSF INTCON, 4, ACCESS
+241:           	INTCON2bits.RBPU = 0; // enable weak pull-ups
+02F0  9EF1     BCF INTCON2, 7, ACCESS
+242:           
+243:           	init_rms_params();
+02F2  D802     RCALL init_rms_params
+244:           
+245:           	/* Enable all high priority interrupts */
+246:           	INTCONbits.GIEH = 1;
+02F4  8EF2     BSF INTCON, 7, ACCESS
+247:           }
+02F6  0012     RETURN 0
+248:           
+249:           uint8_t init_rms_params(void)
+250:           {
+251:           	V.spinning = FALSE;
+02F8  9002     BCF 0x2, 0, ACCESS
+252:           	V.valid = TRUE;
+02FA  8000     BSF timer, 0, ACCESS
+253:           	V.comm = FALSE;
+02FC  9200     BCF timer, 1, ACCESS
+254:           	V.comm_state = 0;
+02FE  6A01     CLRF 0x1, ACCESS
+255:           	V.line_num = 0;
+0300  9402     BCF 0x2, 2, ACCESS
+256:           
+257:           	L_ptr = &L[0];
+0302  0100     MOVLB 0x0
+0304  0E05     MOVLW 0x5
+0306  6FD8     MOVWF L_ptr, BANKED
+0308  0E00     MOVLW 0x0
+030A  6FD9     MOVWF 0xD9, BANKED
+258:           	/* two line strobes in 3 16-bit timer values for spacing */
+259:           	/* for an interrupt driven state machine */
+260:           	L[0].strobe[0] = 60000; 
+030C  0E60     MOVLW 0x60
+030E  6E05     MOVWF L, ACCESS
+0310  0EEA     MOVLW 0xEA
+0312  6E06     MOVWF 0x6, ACCESS
+261:           	L[0].strobe[1] = 64900;
+0314  0E84     MOVLW 0x84
+0316  6E07     MOVWF 0x7, ACCESS
+0318  0EFD     MOVLW 0xFD
+031A  6E08     MOVWF 0x8, ACCESS
+262:           	L[0].strobe[2] = 10000;
+031C  0E10     MOVLW 0x10
+031E  6E09     MOVWF 0x9, ACCESS
+0320  0E27     MOVLW 0x27
+0322  6E0A     MOVWF 0xA, ACCESS
+263:           	L[1].strobe[0] = 50000; // 62000
+0324  0E50     MOVLW 0x50
+0326  6E0B     MOVWF 0xB, ACCESS
+0328  0EC3     MOVLW 0xC3
+032A  6E0C     MOVWF 0xC, ACCESS
+264:           	L[1].strobe[1] = 64900;
+032C  0E84     MOVLW 0x84
+032E  6E0D     MOVWF 0xD, ACCESS
+0330  0EFD     MOVLW 0xFD
+0332  6E0E     MOVWF 0xE, ACCESS
+265:           	L[1].strobe[2] = 10000;
+0334  0E10     MOVLW 0x10
+0336  6E0F     MOVWF 0xF, ACCESS
+0338  0E27     MOVLW 0x27
+033A  6E10     MOVWF 0x10, ACCESS
+266:           	return 0;
+267:           }
+033C  0C00     RETLW 0x0
+268:           
+269:           void main(void)
+270:           {
+271:           	init_rmsmon();
+033E  DF8E     RCALL init_rmsmon
+272:           
+273:           	/* Loop forever */
+274:           	while (TRUE) { // busy work
+0342  D7FE     BRA 0x340
+275:           		sw_work(); // run housekeeping
+0340  DF3D     RCALL sw_work
+276:           	}
+277:           }
 ---  /MCC18/v3_39/src/traditional/stdclib/itobcd.asm  ---------------------------------------------------
-0464  0EFC     MOVLW 0xFC
-0466  CFE3     MOVFF PLUSW1, FSR0
-0468  FFE9     NOP
-046A  0EFD     MOVLW 0xFD
-046C  CFE3     MOVFF PLUSW1, FSR0H
-046E  FFEA     NOP
-0470  0E10     MOVLW 0x10
-0472  6EE6     MOVWF POSTINC1, ACCESS
+0462  0EFC     MOVLW 0xFC
+0464  CFE3     MOVFF PLUSW1, FSR0
+0466  FFE9     NOP
+0468  0EFD     MOVLW 0xFD
+046A  CFE3     MOVFF PLUSW1, FSR0H
+046C  FFEA     NOP
+046E  0E10     MOVLW 0x10
+0470  6EE6     MOVWF POSTINC1, ACCESS
+0472  6AEE     CLRF POSTINC0, ACCESS
 0474  6AEE     CLRF POSTINC0, ACCESS
-0476  6AEE     CLRF POSTINC0, ACCESS
-0478  6AEF     CLRF INDF0, ACCESS
-047A  90D8     BCF STATUS, 0, ACCESS
-047C  0EFD     MOVLW 0xFD
-047E  36E3     RLCF PLUSW1, F, ACCESS
-0480  0EFE     MOVLW 0xFE
-0482  36E3     RLCF PLUSW1, F, ACCESS
+0476  6AEF     CLRF INDF0, ACCESS
+0478  90D8     BCF STATUS, 0, ACCESS
+047A  0EFD     MOVLW 0xFD
+047C  36E3     RLCF PLUSW1, F, ACCESS
+047E  0EFE     MOVLW 0xFE
+0480  36E3     RLCF PLUSW1, F, ACCESS
+0482  36ED     RLCF POSTDEC0, F, ACCESS
 0484  36ED     RLCF POSTDEC0, F, ACCESS
-0486  36ED     RLCF POSTDEC0, F, ACCESS
-0488  36EF     RLCF INDF0, F, ACCESS
-048A  0EFF     MOVLW 0xFF
-048C  06E3     DECF PLUSW1, F, ACCESS
-048E  E009     BZ jEnd
-0490  EC53     CALL 0x4A6, 0
-0492  F002     NOP
-0494  52EE     MOVF POSTINC0, F, ACCESS
-0496  EC53     CALL 0x4A6, 0
-0498  F002     NOP
-049A  52EE     MOVF POSTINC0, F, ACCESS
-049C  EC53     CALL 0x4A6, 0
-049E  F002     NOP
-04A0  D7ED     BRA jLoop
-04A2  6EE5     MOVWF POSTDEC1, ACCESS
-04A4  0012     RETURN 0
-04A6  0E03     MOVLW 0x3
-04A8  24EF     ADDWF INDF0, W, ACCESS
-04AA  B6E8     BTFSC WREG, 3, ACCESS
-04AC  6EEF     MOVWF INDF0, ACCESS
-04AE  0E30     MOVLW 0x30
-04B0  24EF     ADDWF INDF0, W, ACCESS
-04B2  BEE8     BTFSC WREG, 7, ACCESS
-04B4  6EEF     MOVWF INDF0, ACCESS
-04B6  0C00     RETLW 0x0
+0486  36EF     RLCF INDF0, F, ACCESS
+0488  0EFF     MOVLW 0xFF
+048A  06E3     DECF PLUSW1, F, ACCESS
+048C  E009     BZ jEnd
+048E  EC52     CALL 0x4A4, 0
+0490  F002     NOP
+0492  52EE     MOVF POSTINC0, F, ACCESS
+0494  EC52     CALL 0x4A4, 0
+0496  F002     NOP
+0498  52EE     MOVF POSTINC0, F, ACCESS
+049A  EC52     CALL 0x4A4, 0
+049C  F002     NOP
+049E  D7ED     BRA jLoop
+04A0  6EE5     MOVWF POSTDEC1, ACCESS
+04A2  0012     RETURN 0
+04A4  0E03     MOVLW 0x3
+04A6  24EF     ADDWF INDF0, W, ACCESS
+04A8  B6E8     BTFSC WREG, 3, ACCESS
+04AA  6EEF     MOVWF INDF0, ACCESS
+04AC  0E30     MOVLW 0x30
+04AE  24EF     ADDWF INDF0, W, ACCESS
+04B0  BEE8     BTFSC WREG, 7, ACCESS
+04B2  6EEF     MOVWF INDF0, ACCESS
+04B4  0C00     RETLW 0x0
 ---  /MCC18/v3_39/src/traditional/stdclib/itoa.asm  -----------------------------------------------------
-0384  CFD9     MOVFF FSR2, POSTINC1
-0386  FFE6     NOP
-0388  CFDA     MOVFF FSR2H, POSTINC1
-038A  FFE6     NOP
-038C  0EFA     MOVLW 0xFA
-038E  CFE3     MOVFF PLUSW1, FSR2
-0390  FFD9     NOP
-0392  0EFB     MOVLW 0xFB
-0394  CFE3     MOVFF PLUSW1, FSR2H
-0396  FFDA     NOP
-0398  0EFD     MOVLW 0xFD
-039A  52E3     MOVF PLUSW1, F, ACCESS
-039C  E709     BNN jTstSign1
-039E  0E2D     MOVLW 0x2D
-03A0  6EDE     MOVWF POSTINC2, ACCESS
-03A2  0EFC     MOVLW 0xFC
-03A4  1EE3     COMF PLUSW1, F, ACCESS
-03A6  2AE3     INCF PLUSW1, F, ACCESS
-03A8  0EFD     MOVLW 0xFD
-03AA  B4D8     BTFSC STATUS, 2, ACCESS
-03AC  06E3     DECF PLUSW1, F, ACCESS
-03AE  1EE3     COMF PLUSW1, F, ACCESS
+0382  CFD9     MOVFF FSR2, POSTINC1
+0384  FFE6     NOP
+0386  CFDA     MOVFF FSR2H, POSTINC1
+0388  FFE6     NOP
+038A  0EFA     MOVLW 0xFA
+038C  CFE3     MOVFF PLUSW1, FSR2
+038E  FFD9     NOP
+0390  0EFB     MOVLW 0xFB
+0392  CFE3     MOVFF PLUSW1, FSR2H
+0394  FFDA     NOP
+0396  0EFD     MOVLW 0xFD
+0398  52E3     MOVF PLUSW1, F, ACCESS
+039A  E709     BNN jTstSign1
+039C  0E2D     MOVLW 0x2D
+039E  6EDE     MOVWF POSTINC2, ACCESS
+03A0  0EFC     MOVLW 0xFC
+03A2  1EE3     COMF PLUSW1, F, ACCESS
+03A4  2AE3     INCF PLUSW1, F, ACCESS
+03A6  0EFD     MOVLW 0xFD
+03A8  B4D8     BTFSC STATUS, 2, ACCESS
+03AA  06E3     DECF PLUSW1, F, ACCESS
+03AC  1EE3     COMF PLUSW1, F, ACCESS
+03AE  52E6     MOVF POSTINC1, F, ACCESS
 03B0  52E6     MOVF POSTINC1, F, ACCESS
 03B2  52E6     MOVF POSTINC1, F, ACCESS
-03B4  52E6     MOVF POSTINC1, F, ACCESS
-03B6  0EFD     MOVLW 0xFD
-03B8  24E1     ADDWF FSR1, W, ACCESS
-03BA  6EE7     MOVWF INDF1, ACCESS
-03BC  0EFF     MOVLW 0xFF
-03BE  20E2     ADDWFC FSR1H, W, ACCESS
-03C0  6EE4     MOVWF PREINC1, ACCESS
-03C2  52E6     MOVF POSTINC1, F, ACCESS
-03C4  0EF7     MOVLW 0xF7
-03C6  CFE3     MOVFF PLUSW1, POSTINC1
-03C8  FFE6     NOP
-03CA  0EF7     MOVLW 0xF7
-03CC  CFE3     MOVFF PLUSW1, POSTINC1
-03CE  FFE6     NOP
-03D0  EC32     CALL 0x464, 0
-03D2  F002     NOP
-03D4  0EF9     MOVLW 0xF9
-03D6  24E1     ADDWF FSR1, W, ACCESS
-03D8  6EE9     MOVWF FSR0, ACCESS
-03DA  0EFF     MOVLW 0xFF
-03DC  20E2     ADDWFC FSR1H, W, ACCESS
-03DE  6EEA     MOVWF FSR0H, ACCESS
-03E0  EC22     CALL 0x444, 0
-03E2  F002     NOP
-03E4  E10A     BNZ jDo5
-03E6  EC1F     CALL 0x43E, 0
-03E8  F002     NOP
-03EA  E109     BNZ jDo4
-03EC  EC22     CALL 0x444, 0
-03EE  F002     NOP
-03F0  E108     BNZ jDo3
-03F2  EC1F     CALL 0x43E, 0
-03F4  F002     NOP
-03F6  E107     BNZ jDo2
-03F8  D008     BRA jDo1
-03FA  EC2D     CALL 0x45A, 0
-03FC  F002     NOP
-03FE  EC28     CALL 0x450, 0
-0400  F002     NOP
-0402  EC2D     CALL 0x45A, 0
-0404  F002     NOP
-0406  EC28     CALL 0x450, 0
-0408  F002     NOP
-040A  EC2D     CALL 0x45A, 0
-040C  F002     NOP
-040E  6ADE     CLRF POSTINC2, ACCESS
-0410  0EF9     MOVLW 0xF9
-0412  26E1     ADDWF FSR1, F, ACCESS
-0414  0EFF     MOVLW 0xFF
-0416  22E2     ADDWFC FSR1H, F, ACCESS
-0418  0EFF     MOVLW 0xFF
-041A  CFE3     MOVFF PLUSW1, FSR2H
-041C  FFDA     NOP
-041E  52E5     MOVF POSTDEC1, F, ACCESS
-0420  0EFF     MOVLW 0xFF
-0422  CFE3     MOVFF PLUSW1, FSR2
-0424  FFD9     NOP
-0426  52E5     MOVF POSTDEC1, F, ACCESS
-0428  0EFC     MOVLW 0xFC
-042A  24E1     ADDWF FSR1, W, ACCESS
-042C  6EE9     MOVWF FSR0, ACCESS
-042E  0EFF     MOVLW 0xFF
-0430  20E2     ADDWFC FSR1H, W, ACCESS
-0432  6EEA     MOVWF FSR0H, ACCESS
-0434  CFEE     MOVFF POSTINC0, PROD
-0436  FFF3     NOP
-0438  CFEF     MOVFF INDF0, PRODH
-043A  FFF4     NOP
-043C  0012     RETURN 0
-043E  38EF     SWAPF INDF0, W, ACCESS
-0440  0B0F     ANDLW 0xF
-0442  0012     RETURN 0
-0444  50EF     MOVF INDF0, W, ACCESS
-0446  0B0F     ANDLW 0xF
-0448  E102     BNZ jTstLowZ1
-044A  52EE     MOVF POSTINC0, F, ACCESS
-044C  84D8     BSF STATUS, 2, ACCESS
-044E  0012     RETURN 0
-0450  38EF     SWAPF INDF0, W, ACCESS
-0452  0B0F     ANDLW 0xF
-0454  0F30     ADDLW 0x30
-0456  6EDE     MOVWF POSTINC2, ACCESS
-0458  0012     RETURN 0
-045A  50EE     MOVF POSTINC0, W, ACCESS
-045C  0B0F     ANDLW 0xF
-045E  0F30     ADDLW 0x30
-0460  6EDE     MOVWF POSTINC2, ACCESS
-0462  0012     RETURN 0
+03B4  0EFD     MOVLW 0xFD
+03B6  24E1     ADDWF FSR1, W, ACCESS
+03B8  6EE7     MOVWF INDF1, ACCESS
+03BA  0EFF     MOVLW 0xFF
+03BC  20E2     ADDWFC FSR1H, W, ACCESS
+03BE  6EE4     MOVWF PREINC1, ACCESS
+03C0  52E6     MOVF POSTINC1, F, ACCESS
+03C2  0EF7     MOVLW 0xF7
+03C4  CFE3     MOVFF PLUSW1, POSTINC1
+03C6  FFE6     NOP
+03C8  0EF7     MOVLW 0xF7
+03CA  CFE3     MOVFF PLUSW1, POSTINC1
+03CC  FFE6     NOP
+03CE  EC31     CALL 0x462, 0
+03D0  F002     NOP
+03D2  0EF9     MOVLW 0xF9
+03D4  24E1     ADDWF FSR1, W, ACCESS
+03D6  6EE9     MOVWF FSR0, ACCESS
+03D8  0EFF     MOVLW 0xFF
+03DA  20E2     ADDWFC FSR1H, W, ACCESS
+03DC  6EEA     MOVWF FSR0H, ACCESS
+03DE  EC21     CALL 0x442, 0
+03E0  F002     NOP
+03E2  E10A     BNZ jDo5
+03E4  EC1E     CALL 0x43C, 0
+03E6  F002     NOP
+03E8  E109     BNZ jDo4
+03EA  EC21     CALL 0x442, 0
+03EC  F002     NOP
+03EE  E108     BNZ jDo3
+03F0  EC1E     CALL 0x43C, 0
+03F2  F002     NOP
+03F4  E107     BNZ jDo2
+03F6  D008     BRA jDo1
+03F8  EC2C     CALL 0x458, 0
+03FA  F002     NOP
+03FC  EC27     CALL 0x44E, 0
+03FE  F002     NOP
+0400  EC2C     CALL 0x458, 0
+0402  F002     NOP
+0404  EC27     CALL 0x44E, 0
+0406  F002     NOP
+0408  EC2C     CALL 0x458, 0
+040A  F002     NOP
+040C  6ADE     CLRF POSTINC2, ACCESS
+040E  0EF9     MOVLW 0xF9
+0410  26E1     ADDWF FSR1, F, ACCESS
+0412  0EFF     MOVLW 0xFF
+0414  22E2     ADDWFC FSR1H, F, ACCESS
+0416  0EFF     MOVLW 0xFF
+0418  CFE3     MOVFF PLUSW1, FSR2H
+041A  FFDA     NOP
+041C  52E5     MOVF POSTDEC1, F, ACCESS
+041E  0EFF     MOVLW 0xFF
+0420  CFE3     MOVFF PLUSW1, FSR2
+0422  FFD9     NOP
+0424  52E5     MOVF POSTDEC1, F, ACCESS
+0426  0EFC     MOVLW 0xFC
+0428  24E1     ADDWF FSR1, W, ACCESS
+042A  6EE9     MOVWF FSR0, ACCESS
+042C  0EFF     MOVLW 0xFF
+042E  20E2     ADDWFC FSR1H, W, ACCESS
+0430  6EEA     MOVWF FSR0H, ACCESS
+0432  CFEE     MOVFF POSTINC0, PROD
+0434  FFF3     NOP
+0436  CFEF     MOVFF INDF0, PRODH
+0438  FFF4     NOP
+043A  0012     RETURN 0
+043C  38EF     SWAPF INDF0, W, ACCESS
+043E  0B0F     ANDLW 0xF
+0440  0012     RETURN 0
+0442  50EF     MOVF INDF0, W, ACCESS
+0444  0B0F     ANDLW 0xF
+0446  E102     BNZ jTstLowZ1
+0448  52EE     MOVF POSTINC0, F, ACCESS
+044A  84D8     BSF STATUS, 2, ACCESS
+044C  0012     RETURN 0
+044E  38EF     SWAPF INDF0, W, ACCESS
+0450  0B0F     ANDLW 0xF
+0452  0F30     ADDLW 0x30
+0454  6EDE     MOVWF POSTINC2, ACCESS
+0456  0012     RETURN 0
+0458  50EE     MOVF POSTINC0, W, ACCESS
+045A  0B0F     ANDLW 0xF
+045C  0F30     ADDLW 0x30
+045E  6EDE     MOVWF POSTINC2, ACCESS
+0460  0012     RETURN 0
 ---  /MCC18/v3_39/src/traditional/stdclib/__init.c  -----------------------------------------------------
 0006  0012     RETURN 0
 ---  /MCC18/v3_39/src/traditional/startup/c018i.c  ------------------------------------------------------
-0000  EFE4     GOTO 0x7C8
+0000  EFE3     GOTO 0x7C6
 0002  F003     NOP
 0004  0012     RETURN 0
-07C8  EE10     LFSR 1, 0x80
-07CA  F080     NOP
-07CC  EE20     LFSR 2, 0x80
-07CE  F080     NOP
-07D0  6AF8     CLRF TBLPTRU, ACCESS
-07D2  9C14     BCF 0x14, 6, ACCESS
-07D4  EC5C     CALL 0x4B8, 0
-07D6  F002     NOP
-07D8  EC03     CALL 0x6, 0
-07DA  F000     NOP
-07DC  ECA0     CALL 0x340, 0
-07DE  F001     NOP
-07E0  D7FB     BRA 0x7D8
-07E2  0012     RETURN 0
-04B8  0E0E     MOVLW 0xE
-04BA  6EF6     MOVWF TBLPTR, ACCESS
-04BC  0E00     MOVLW 0x0
-04BE  6EF7     MOVWF TBLPTRH, ACCESS
-04C0  0E00     MOVLW 0x0
-04C2  6EF8     MOVWF TBLPTRU, ACCESS
-04C4  0100     MOVLB 0x0
-04C6  0009     TBLRD*+
-04C8  50F5     MOVF TABLAT, W, ACCESS
-04CA  6FDF     MOVWF curr_entry, BANKED
-04CC  0009     TBLRD*+
-04CE  50F5     MOVF TABLAT, W, ACCESS
-04D0  6FE0     MOVWF 0xE0, BANKED
-04D2  E103     BNZ 0x4DA
-04D4  67DF     TSTFSZ curr_entry, BANKED
-04D6  D001     BRA 0x4DA
-04D8  D03D     BRA 0x554
-04DA  0009     TBLRD*+
-04DC  50F5     MOVF TABLAT, W, ACCESS
-04DE  6FDA     MOVWF prom, BANKED
-04E0  0009     TBLRD*+
-04E2  50F5     MOVF TABLAT, W, ACCESS
-04E4  6FDB     MOVWF 0xDB, BANKED
-04E6  0009     TBLRD*+
-04E8  50F5     MOVF TABLAT, W, ACCESS
-04EA  6FDC     MOVWF 0xDC, BANKED
+07C6  EE10     LFSR 1, 0x80
+07C8  F080     NOP
+07CA  EE20     LFSR 2, 0x80
+07CC  F080     NOP
+07CE  6AF8     CLRF TBLPTRU, ACCESS
+07D0  9C14     BCF 0x14, 6, ACCESS
+07D2  EC5B     CALL 0x4B6, 0
+07D4  F002     NOP
+07D6  EC03     CALL 0x6, 0
+07D8  F000     NOP
+07DA  EC9F     CALL 0x33E, 0
+07DC  F001     NOP
+07DE  D7FB     BRA 0x7D6
+07E0  0012     RETURN 0
+04B6  0E0E     MOVLW 0xE
+04B8  6EF6     MOVWF TBLPTR, ACCESS
+04BA  0E00     MOVLW 0x0
+04BC  6EF7     MOVWF TBLPTRH, ACCESS
+04BE  0E00     MOVLW 0x0
+04C0  6EF8     MOVWF TBLPTRU, ACCESS
+04C2  0100     MOVLB 0x0
+04C4  0009     TBLRD*+
+04C6  50F5     MOVF TABLAT, W, ACCESS
+04C8  6FDF     MOVWF curr_entry, BANKED
+04CA  0009     TBLRD*+
+04CC  50F5     MOVF TABLAT, W, ACCESS
+04CE  6FE0     MOVWF 0xE0, BANKED
+04D0  E103     BNZ 0x4D8
+04D2  67DF     TSTFSZ curr_entry, BANKED
+04D4  D001     BRA 0x4D8
+04D6  D03D     BRA 0x552
+04D8  0009     TBLRD*+
+04DA  50F5     MOVF TABLAT, W, ACCESS
+04DC  6FDA     MOVWF prom, BANKED
+04DE  0009     TBLRD*+
+04E0  50F5     MOVF TABLAT, W, ACCESS
+04E2  6FDB     MOVWF 0xDB, BANKED
+04E4  0009     TBLRD*+
+04E6  50F5     MOVF TABLAT, W, ACCESS
+04E8  6FDC     MOVWF 0xDC, BANKED
+04EA  0009     TBLRD*+
 04EC  0009     TBLRD*+
-04EE  0009     TBLRD*+
-04F0  50F5     MOVF TABLAT, W, ACCESS
-04F2  6EE9     MOVWF FSR0, ACCESS
-04F4  0009     TBLRD*+
-04F6  50F5     MOVF TABLAT, W, ACCESS
-04F8  6EEA     MOVWF FSR0H, ACCESS
+04EE  50F5     MOVF TABLAT, W, ACCESS
+04F0  6EE9     MOVWF FSR0, ACCESS
+04F2  0009     TBLRD*+
+04F4  50F5     MOVF TABLAT, W, ACCESS
+04F6  6EEA     MOVWF FSR0H, ACCESS
+04F8  0009     TBLRD*+
 04FA  0009     TBLRD*+
 04FC  0009     TBLRD*+
-04FE  0009     TBLRD*+
-0500  50F5     MOVF TABLAT, W, ACCESS
-0502  6FDD     MOVWF curr_byte, BANKED
-0504  0009     TBLRD*+
-0506  50F5     MOVF TABLAT, W, ACCESS
-0508  6FDE     MOVWF 0xDE, BANKED
+04FE  50F5     MOVF TABLAT, W, ACCESS
+0500  6FDD     MOVWF curr_byte, BANKED
+0502  0009     TBLRD*+
+0504  50F5     MOVF TABLAT, W, ACCESS
+0506  6FDE     MOVWF 0xDE, BANKED
+0508  0009     TBLRD*+
 050A  0009     TBLRD*+
-050C  0009     TBLRD*+
-050E  CFF6     MOVFF TBLPTR, data_ptr
-0510  F0E1     NOP
-0512  CFF7     MOVFF TBLPTRH, 0xE2
-0514  F0E2     NOP
-0516  CFF8     MOVFF TBLPTRU, 0xE3
-0518  F0E3     NOP
-051A  C0DA     MOVFF prom, TBLPTR
-051C  FFF6     NOP
-051E  C0DB     MOVFF 0xDB, TBLPTRH
-0520  FFF7     NOP
-0522  C0DC     MOVFF 0xDC, TBLPTRU
-0524  FFF8     NOP
-0526  0100     MOVLB 0x0
-0528  53DD     MOVF curr_byte, F, BANKED
-052A  E102     BNZ 0x530
-052C  53DE     MOVF 0xDE, F, BANKED
-052E  E007     BZ 0x53E
-0530  0009     TBLRD*+
-0532  50F5     MOVF TABLAT, W, ACCESS
-0534  6EEE     MOVWF POSTINC0, ACCESS
-0536  07DD     DECF curr_byte, F, BANKED
-0538  E2F8     BC 0x52A
-053A  07DE     DECF 0xDE, F, BANKED
-053C  D7F9     BRA 0x530
-053E  C0E1     MOVFF data_ptr, TBLPTR
-0540  FFF6     NOP
-0542  C0E2     MOVFF 0xE2, TBLPTRH
-0544  FFF7     NOP
-0546  C0E3     MOVFF 0xE3, TBLPTRU
-0548  FFF8     NOP
-054A  0100     MOVLB 0x0
-054C  07DF     DECF curr_entry, F, BANKED
-054E  0E00     MOVLW 0x0
-0550  5BE0     SUBWFB 0xE0, F, BANKED
-0552  D7BF     BRA 0x4D2
-0554  0012     RETURN 0
+050C  CFF6     MOVFF TBLPTR, data_ptr
+050E  F0E1     NOP
+0510  CFF7     MOVFF TBLPTRH, 0xE2
+0512  F0E2     NOP
+0514  CFF8     MOVFF TBLPTRU, 0xE3
+0516  F0E3     NOP
+0518  C0DA     MOVFF prom, TBLPTR
+051A  FFF6     NOP
+051C  C0DB     MOVFF 0xDB, TBLPTRH
+051E  FFF7     NOP
+0520  C0DC     MOVFF 0xDC, TBLPTRU
+0522  FFF8     NOP
+0524  0100     MOVLB 0x0
+0526  53DD     MOVF curr_byte, F, BANKED
+0528  E102     BNZ 0x52E
+052A  53DE     MOVF 0xDE, F, BANKED
+052C  E007     BZ 0x53C
+052E  0009     TBLRD*+
+0530  50F5     MOVF TABLAT, W, ACCESS
+0532  6EEE     MOVWF POSTINC0, ACCESS
+0534  07DD     DECF curr_byte, F, BANKED
+0536  E2F8     BC 0x528
+0538  07DE     DECF 0xDE, F, BANKED
+053A  D7F9     BRA 0x52E
+053C  C0E1     MOVFF data_ptr, TBLPTR
+053E  FFF6     NOP
+0540  C0E2     MOVFF 0xE2, TBLPTRH
+0542  FFF7     NOP
+0544  C0E3     MOVFF 0xE3, TBLPTRU
+0546  FFF8     NOP
+0548  0100     MOVLB 0x0
+054A  07DF     DECF curr_entry, F, BANKED
+054C  0E00     MOVLW 0x0
+054E  5BE0     SUBWFB 0xE0, F, BANKED
+0550  D7BF     BRA 0x4D0
+0552  0012     RETURN 0
 ---  /MCC18/v3_39/src/traditional/proc/p18F1320.asm  ----------------------------------------------------
-07A8  0E00     MOVLW 0x0
-07AA  6EF3     MOVWF PROD, ACCESS
-07AC  EE00     LFSR 0, 0x0
-07AE  F000     NOP
-07B0  0E01     MOVLW 0x1
-07B2  D801     RCALL zero_block
-07B4  0012     RETURN 0
-07B6  60EA     CPFSLT FSR0H, ACCESS
-07B8  D002     BRA compare_l
-07BA  6AEE     CLRF POSTINC0, ACCESS
-07BC  D7FC     BRA zero_block
-07BE  50F3     MOVF PROD, W, ACCESS
-07C0  60E9     CPFSLT FSR0, ACCESS
-07C2  0012     RETURN 0
-07C4  6AEE     CLRF POSTINC0, ACCESS
-07C6  D7FC     BRA loop_l
+07A6  0E00     MOVLW 0x0
+07A8  6EF3     MOVWF PROD, ACCESS
+07AA  EE00     LFSR 0, 0x0
+07AC  F000     NOP
+07AE  0E01     MOVLW 0x1
+07B0  D801     RCALL zero_block
+07B2  0012     RETURN 0
+07B4  60EA     CPFSLT FSR0H, ACCESS
+07B6  D002     BRA compare_l
+07B8  6AEE     CLRF POSTINC0, ACCESS
+07BA  D7FC     BRA zero_block
+07BC  50F3     MOVF PROD, W, ACCESS
+07BE  60E9     CPFSLT FSR0, ACCESS
+07C0  0012     RETURN 0
+07C2  6AEE     CLRF POSTINC0, ACCESS
+07C4  D7FC     BRA loop_l
 ---  /MCC18/v3_39/src/pmc_common/USART/uwrite.c  --------------------------------------------------------
-077A  CFD9     MOVFF FSR2, POSTINC1
-077C  FFE6     NOP
-077E  CFDA     MOVFF FSR2H, POSTINC1
-0780  FFE6     NOP
-0782  CFE1     MOVFF FSR1, FSR2
-0784  FFD9     NOP
-0786  CFE2     MOVFF FSR1H, FSR2H
-0788  FFDA     NOP
-078A  ACAC     BTFSS TXSTA, 6, ACCESS
-078C  D004     BRA 0x796
-078E  90AC     BCF TXSTA, 0, ACCESS
-0790  0100     MOVLB 0x0
-0792  B3E9     BTFSC USART_Status, 1, BANKED
-0794  80AC     BSF TXSTA, 0, ACCESS
-0796  0EFD     MOVLW 0xFD
-0798  50DB     MOVF PLUSW2, W, ACCESS
-079A  6EAD     MOVWF TXREG, ACCESS
-079C  52E5     MOVF POSTDEC1, F, ACCESS
-079E  CFE5     MOVFF POSTDEC1, FSR2H
-07A0  FFDA     NOP
-07A2  CFE7     MOVFF INDF1, FSR2
-07A4  FFD9     NOP
-07A6  0012     RETURN 0
+0778  CFD9     MOVFF FSR2, POSTINC1
+077A  FFE6     NOP
+077C  CFDA     MOVFF FSR2H, POSTINC1
+077E  FFE6     NOP
+0780  CFE1     MOVFF FSR1, FSR2
+0782  FFD9     NOP
+0784  CFE2     MOVFF FSR1H, FSR2H
+0786  FFDA     NOP
+0788  ACAC     BTFSS TXSTA, 6, ACCESS
+078A  D004     BRA 0x794
+078C  90AC     BCF TXSTA, 0, ACCESS
+078E  0100     MOVLB 0x0
+0790  B3E9     BTFSC USART_Status, 1, BANKED
+0792  80AC     BSF TXSTA, 0, ACCESS
+0794  0EFD     MOVLW 0xFD
+0796  50DB     MOVF PLUSW2, W, ACCESS
+0798  6EAD     MOVWF TXREG, ACCESS
+079A  52E5     MOVF POSTDEC1, F, ACCESS
+079C  CFE5     MOVFF POSTDEC1, FSR2H
+079E  FFDA     NOP
+07A0  CFE7     MOVFF INDF1, FSR2
+07A2  FFD9     NOP
+07A4  0012     RETURN 0
 ---  /MCC18/v3_39/src/pmc_common/USART/uputs.c  ---------------------------------------------------------
-0644  CFD9     MOVFF FSR2, POSTINC1
-0646  FFE6     NOP
-0648  CFDA     MOVFF FSR2H, POSTINC1
-064A  FFE6     NOP
-064C  CFE1     MOVFF FSR1, FSR2
-064E  FFD9     NOP
-0650  CFE2     MOVFF FSR1H, FSR2H
-0652  FFDA     NOP
-0654  A2AC     BTFSS TXSTA, 1, ACCESS
-0656  D7FE     BRA 0x654
-0658  0EFC     MOVLW 0xFC
-065A  CFDB     MOVFF PLUSW2, FSR0
-065C  FFE9     NOP
-065E  0EFD     MOVLW 0xFD
-0660  CFDB     MOVFF PLUSW2, FSR0H
-0662  FFEA     NOP
-0664  50EF     MOVF INDF0, W, ACCESS
-0666  6EE6     MOVWF POSTINC1, ACCESS
-0668  ECBD     CALL 0x77A, 0
-066A  F003     NOP
-066C  52E5     MOVF POSTDEC1, F, ACCESS
-066E  0EFC     MOVLW 0xFC
-0670  CFDB     MOVFF PLUSW2, FSR0
-0672  FFE9     NOP
-0674  2ADB     INCF PLUSW2, F, ACCESS
-0676  0EFD     MOVLW 0xFD
-0678  CFDB     MOVFF PLUSW2, FSR0H
-067A  FFEA     NOP
-067C  E301     BNC 0x680
-067E  2ADB     INCF PLUSW2, F, ACCESS
-0680  50EF     MOVF INDF0, W, ACCESS
-0682  E1E8     BNZ 0x654
-0684  52E5     MOVF POSTDEC1, F, ACCESS
-0686  CFE5     MOVFF POSTDEC1, FSR2H
-0688  FFDA     NOP
-068A  CFE7     MOVFF INDF1, FSR2
-068C  FFD9     NOP
-068E  0012     RETURN 0
+0642  CFD9     MOVFF FSR2, POSTINC1
+0644  FFE6     NOP
+0646  CFDA     MOVFF FSR2H, POSTINC1
+0648  FFE6     NOP
+064A  CFE1     MOVFF FSR1, FSR2
+064C  FFD9     NOP
+064E  CFE2     MOVFF FSR1H, FSR2H
+0650  FFDA     NOP
+0652  A2AC     BTFSS TXSTA, 1, ACCESS
+0654  D7FE     BRA 0x652
+0656  0EFC     MOVLW 0xFC
+0658  CFDB     MOVFF PLUSW2, FSR0
+065A  FFE9     NOP
+065C  0EFD     MOVLW 0xFD
+065E  CFDB     MOVFF PLUSW2, FSR0H
+0660  FFEA     NOP
+0662  50EF     MOVF INDF0, W, ACCESS
+0664  6EE6     MOVWF POSTINC1, ACCESS
+0666  ECBC     CALL 0x778, 0
+0668  F003     NOP
+066A  52E5     MOVF POSTDEC1, F, ACCESS
+066C  0EFC     MOVLW 0xFC
+066E  CFDB     MOVFF PLUSW2, FSR0
+0670  FFE9     NOP
+0672  2ADB     INCF PLUSW2, F, ACCESS
+0674  0EFD     MOVLW 0xFD
+0676  CFDB     MOVFF PLUSW2, FSR0H
+0678  FFEA     NOP
+067A  E301     BNC 0x67E
+067C  2ADB     INCF PLUSW2, F, ACCESS
+067E  50EF     MOVF INDF0, W, ACCESS
+0680  E1E8     BNZ 0x652
+0682  52E5     MOVF POSTDEC1, F, ACCESS
+0684  CFE5     MOVFF POSTDEC1, FSR2H
+0686  FFDA     NOP
+0688  CFE7     MOVFF INDF1, FSR2
+068A  FFD9     NOP
+068C  0012     RETURN 0
 ---  /MCC18/v3_39/src/pmc_common/USART/uputrs.c  --------------------------------------------------------
-05E0  CFD9     MOVFF FSR2, POSTINC1
-05E2  FFE6     NOP
-05E4  CFDA     MOVFF FSR2H, POSTINC1
-05E6  FFE6     NOP
-05E8  CFE1     MOVFF FSR1, FSR2
-05EA  FFD9     NOP
-05EC  CFE2     MOVFF FSR1H, FSR2H
-05EE  FFDA     NOP
-05F0  A2AC     BTFSS TXSTA, 1, ACCESS
-05F2  D7FE     BRA 0x5F0
-05F4  0EFB     MOVLW 0xFB
-05F6  CFDB     MOVFF PLUSW2, TBLPTR
-05F8  FFF6     NOP
-05FA  0EFC     MOVLW 0xFC
-05FC  CFDB     MOVFF PLUSW2, TBLPTRH
-05FE  FFF7     NOP
-0600  0EFD     MOVLW 0xFD
-0602  CFDB     MOVFF PLUSW2, TBLPTRU
-0604  FFF8     NOP
-0606  0008     TBLRD*
-0608  50F5     MOVF TABLAT, W, ACCESS
-060A  6EE6     MOVWF POSTINC1, ACCESS
-060C  ECBD     CALL 0x77A, 0
-060E  F003     NOP
-0610  52E5     MOVF POSTDEC1, F, ACCESS
-0612  50D9     MOVF FSR2, W, ACCESS
-0614  0FFB     ADDLW 0xFB
-0616  6EE9     MOVWF FSR0, ACCESS
-0618  0EFF     MOVLW 0xFF
-061A  20DA     ADDWFC FSR2H, W, ACCESS
-061C  6EEA     MOVWF FSR0H, ACCESS
-061E  CFEF     MOVFF INDF0, TBLPTR
-0620  FFF6     NOP
-0622  2AEE     INCF POSTINC0, F, ACCESS
-0624  CFEF     MOVFF INDF0, TBLPTRH
-0626  FFF7     NOP
-0628  0E00     MOVLW 0x0
-062A  22EE     ADDWFC POSTINC0, F, ACCESS
-062C  CFEF     MOVFF INDF0, TBLPTRU
-062E  FFF8     NOP
-0630  22EE     ADDWFC POSTINC0, F, ACCESS
-0632  0008     TBLRD*
-0634  50F5     MOVF TABLAT, W, ACCESS
-0636  E1DC     BNZ 0x5F0
-0638  52E5     MOVF POSTDEC1, F, ACCESS
-063A  CFE5     MOVFF POSTDEC1, FSR2H
-063C  FFDA     NOP
-063E  CFE7     MOVFF INDF1, FSR2
-0640  FFD9     NOP
-0642  0012     RETURN 0
+05DE  CFD9     MOVFF FSR2, POSTINC1
+05E0  FFE6     NOP
+05E2  CFDA     MOVFF FSR2H, POSTINC1
+05E4  FFE6     NOP
+05E6  CFE1     MOVFF FSR1, FSR2
+05E8  FFD9     NOP
+05EA  CFE2     MOVFF FSR1H, FSR2H
+05EC  FFDA     NOP
+05EE  A2AC     BTFSS TXSTA, 1, ACCESS
+05F0  D7FE     BRA 0x5EE
+05F2  0EFB     MOVLW 0xFB
+05F4  CFDB     MOVFF PLUSW2, TBLPTR
+05F6  FFF6     NOP
+05F8  0EFC     MOVLW 0xFC
+05FA  CFDB     MOVFF PLUSW2, TBLPTRH
+05FC  FFF7     NOP
+05FE  0EFD     MOVLW 0xFD
+0600  CFDB     MOVFF PLUSW2, TBLPTRU
+0602  FFF8     NOP
+0604  0008     TBLRD*
+0606  50F5     MOVF TABLAT, W, ACCESS
+0608  6EE6     MOVWF POSTINC1, ACCESS
+060A  ECBC     CALL 0x778, 0
+060C  F003     NOP
+060E  52E5     MOVF POSTDEC1, F, ACCESS
+0610  50D9     MOVF FSR2, W, ACCESS
+0612  0FFB     ADDLW 0xFB
+0614  6EE9     MOVWF FSR0, ACCESS
+0616  0EFF     MOVLW 0xFF
+0618  20DA     ADDWFC FSR2H, W, ACCESS
+061A  6EEA     MOVWF FSR0H, ACCESS
+061C  CFEF     MOVFF INDF0, TBLPTR
+061E  FFF6     NOP
+0620  2AEE     INCF POSTINC0, F, ACCESS
+0622  CFEF     MOVFF INDF0, TBLPTRH
+0624  FFF7     NOP
+0626  0E00     MOVLW 0x0
+0628  22EE     ADDWFC POSTINC0, F, ACCESS
+062A  CFEF     MOVFF INDF0, TBLPTRU
+062C  FFF8     NOP
+062E  22EE     ADDWFC POSTINC0, F, ACCESS
+0630  0008     TBLRD*
+0632  50F5     MOVF TABLAT, W, ACCESS
+0634  E1DC     BNZ 0x5EE
+0636  52E5     MOVF POSTDEC1, F, ACCESS
+0638  CFE5     MOVFF POSTDEC1, FSR2H
+063A  FFDA     NOP
+063C  CFE7     MOVFF INDF1, FSR2
+063E  FFD9     NOP
+0640  0012     RETURN 0
 ---  /MCC18/v3_39/src/pmc_common/USART/uopen.c  ---------------------------------------------------------
-0556  CFD9     MOVFF FSR2, POSTINC1
-0558  FFE6     NOP
-055A  CFDA     MOVFF FSR2H, POSTINC1
-055C  FFE6     NOP
-055E  CFE1     MOVFF FSR1, FSR2
-0560  FFD9     NOP
-0562  CFE2     MOVFF FSR1H, FSR2H
-0564  FFDA     NOP
-0566  6AAC     CLRF TXSTA, ACCESS
-0568  6AAB     CLRF RCSTA, ACCESS
-056A  0EFD     MOVLW 0xFD
-056C  B0DB     BTFSC PLUSW2, 0, ACCESS
-056E  88AC     BSF TXSTA, 4, ACCESS
-0570  A2DB     BTFSS PLUSW2, 1, ACCESS
-0572  D002     BRA 0x578
-0574  8CAC     BSF TXSTA, 6, ACCESS
-0576  8CAB     BSF RCSTA, 6, ACCESS
-0578  B4DB     BTFSC PLUSW2, 2, ACCESS
-057A  8EAC     BSF TXSTA, 7, ACCESS
-057C  A6DB     BTFSS PLUSW2, 3, ACCESS
-057E  D002     BRA 0x584
-0580  88AB     BSF RCSTA, 4, ACCESS
-0582  D001     BRA 0x586
-0584  8AAB     BSF RCSTA, 5, ACCESS
-0586  B8DB     BTFSC PLUSW2, 4, ACCESS
-0588  84AC     BSF TXSTA, 2, ACCESS
-058A  989E     BCF PIR1, 4, ACCESS
-058C  BADB     BTFSC PLUSW2, 5, ACCESS
-058E  86AB     BSF RCSTA, 3, ACCESS
-0590  ACDB     BTFSS PLUSW2, 6, ACCESS
-0592  D002     BRA 0x598
-0594  8A9D     BSF PIE1, 5, ACCESS
-0596  D001     BRA 0x59A
-0598  9A9D     BCF PIE1, 5, ACCESS
-059A  9A9E     BCF PIR1, 5, ACCESS
-059C  AEDB     BTFSS PLUSW2, 7, ACCESS
-059E  D002     BRA 0x5A4
-05A0  889D     BSF PIE1, 4, ACCESS
-05A2  D001     BRA 0x5A6
-05A4  989D     BCF PIE1, 4, ACCESS
-05A6  0EFB     MOVLW 0xFB
-05A8  50DB     MOVF PLUSW2, W, ACCESS
-05AA  6EAF     MOVWF SPBRG, ACCESS
-05AC  0EFB     MOVLW 0xFB
-05AE  0EFC     MOVLW 0xFC
-05B0  CFDB     MOVFF PLUSW2, 0x16
-05B2  F016     NOP
-05B4  C016     MOVFF 0x16, __tmp_0
-05B6  F015     NOP
-05B8  6A16     CLRF 0x16, ACCESS
-05BA  5015     MOVF __tmp_0, W, ACCESS
-05BC  6EB0     MOVWF SPBRGH, ACCESS
-05BE  8AAC     BSF TXSTA, 5, ACCESS
-05C0  8EAB     BSF RCSTA, 7, ACCESS
-05C2  9293     BCF TRISB, 1, ACCESS
-05C4  8893     BSF TRISB, 4, ACCESS
-05C6  50AC     MOVF TXSTA, W, ACCESS
-05C8  0B10     ANDLW 0x10
-05CA  E004     BZ 0x5D4
-05CC  50AC     MOVF TXSTA, W, ACCESS
-05CE  0B80     ANDLW 0x80
-05D0  E101     BNZ 0x5D4
-05D2  8293     BSF TRISB, 1, ACCESS
-05D4  52E5     MOVF POSTDEC1, F, ACCESS
-05D6  CFE5     MOVFF POSTDEC1, FSR2H
-05D8  FFDA     NOP
-05DA  CFE7     MOVFF INDF1, FSR2
-05DC  FFD9     NOP
-05DE  0012     RETURN 0
+0554  CFD9     MOVFF FSR2, POSTINC1
+0556  FFE6     NOP
+0558  CFDA     MOVFF FSR2H, POSTINC1
+055A  FFE6     NOP
+055C  CFE1     MOVFF FSR1, FSR2
+055E  FFD9     NOP
+0560  CFE2     MOVFF FSR1H, FSR2H
+0562  FFDA     NOP
+0564  6AAC     CLRF TXSTA, ACCESS
+0566  6AAB     CLRF RCSTA, ACCESS
+0568  0EFD     MOVLW 0xFD
+056A  B0DB     BTFSC PLUSW2, 0, ACCESS
+056C  88AC     BSF TXSTA, 4, ACCESS
+056E  A2DB     BTFSS PLUSW2, 1, ACCESS
+0570  D002     BRA 0x576
+0572  8CAC     BSF TXSTA, 6, ACCESS
+0574  8CAB     BSF RCSTA, 6, ACCESS
+0576  B4DB     BTFSC PLUSW2, 2, ACCESS
+0578  8EAC     BSF TXSTA, 7, ACCESS
+057A  A6DB     BTFSS PLUSW2, 3, ACCESS
+057C  D002     BRA 0x582
+057E  88AB     BSF RCSTA, 4, ACCESS
+0580  D001     BRA 0x584
+0582  8AAB     BSF RCSTA, 5, ACCESS
+0584  B8DB     BTFSC PLUSW2, 4, ACCESS
+0586  84AC     BSF TXSTA, 2, ACCESS
+0588  989E     BCF PIR1, 4, ACCESS
+058A  BADB     BTFSC PLUSW2, 5, ACCESS
+058C  86AB     BSF RCSTA, 3, ACCESS
+058E  ACDB     BTFSS PLUSW2, 6, ACCESS
+0590  D002     BRA 0x596
+0592  8A9D     BSF PIE1, 5, ACCESS
+0594  D001     BRA 0x598
+0596  9A9D     BCF PIE1, 5, ACCESS
+0598  9A9E     BCF PIR1, 5, ACCESS
+059A  AEDB     BTFSS PLUSW2, 7, ACCESS
+059C  D002     BRA 0x5A2
+059E  889D     BSF PIE1, 4, ACCESS
+05A0  D001     BRA 0x5A4
+05A2  989D     BCF PIE1, 4, ACCESS
+05A4  0EFB     MOVLW 0xFB
+05A6  50DB     MOVF PLUSW2, W, ACCESS
+05A8  6EAF     MOVWF SPBRG, ACCESS
+05AA  0EFB     MOVLW 0xFB
+05AC  0EFC     MOVLW 0xFC
+05AE  CFDB     MOVFF PLUSW2, 0x16
+05B0  F016     NOP
+05B2  C016     MOVFF 0x16, __tmp_0
+05B4  F015     NOP
+05B6  6A16     CLRF 0x16, ACCESS
+05B8  5015     MOVF __tmp_0, W, ACCESS
+05BA  6EB0     MOVWF SPBRGH, ACCESS
+05BC  8AAC     BSF TXSTA, 5, ACCESS
+05BE  8EAB     BSF RCSTA, 7, ACCESS
+05C0  9293     BCF TRISB, 1, ACCESS
+05C2  8893     BSF TRISB, 4, ACCESS
+05C4  50AC     MOVF TXSTA, W, ACCESS
+05C6  0B10     ANDLW 0x10
+05C8  E004     BZ 0x5D2
+05CA  50AC     MOVF TXSTA, W, ACCESS
+05CC  0B80     ANDLW 0x80
+05CE  E101     BNZ 0x5D2
+05D0  8293     BSF TRISB, 1, ACCESS
+05D2  52E5     MOVF POSTDEC1, F, ACCESS
+05D4  CFE5     MOVFF POSTDEC1, FSR2H
+05D6  FFDA     NOP
+05D8  CFE7     MOVFF INDF1, FSR2
+05DA  FFD9     NOP
+05DC  0012     RETURN 0
 ---  /MCC18/v3_39/src/pmc_common/Timers/t1write.c  ------------------------------------------------------
-06D2  CFD9     MOVFF FSR2, POSTINC1
-06D4  FFE6     NOP
-06D6  CFDA     MOVFF FSR2H, POSTINC1
-06D8  FFE6     NOP
-06DA  CFE1     MOVFF FSR1, FSR2
-06DC  FFD9     NOP
-06DE  CFE2     MOVFF FSR1H, FSR2H
-06E0  FFDA     NOP
+06D0  CFD9     MOVFF FSR2, POSTINC1
+06D2  FFE6     NOP
+06D4  CFDA     MOVFF FSR2H, POSTINC1
+06D6  FFE6     NOP
+06D8  CFE1     MOVFF FSR1, FSR2
+06DA  FFD9     NOP
+06DC  CFE2     MOVFF FSR1H, FSR2H
+06DE  FFDA     NOP
+06E0  52E6     MOVF POSTINC1, F, ACCESS
 06E2  52E6     MOVF POSTINC1, F, ACCESS
-06E4  52E6     MOVF POSTINC1, F, ACCESS
-06E6  0EFC     MOVLW 0xFC
-06E8  CFDB     MOVFF PLUSW2, POSTINC2
-06EA  FFDE     NOP
-06EC  CFDB     MOVFF PLUSW2, POSTDEC2
-06EE  FFDD     NOP
-06F0  0E01     MOVLW 0x1
-06F2  50DB     MOVF PLUSW2, W, ACCESS
-06F4  6ECF     MOVWF TMR1H, ACCESS
-06F6  50DF     MOVF INDF2, W, ACCESS
-06F8  6ECE     MOVWF TMR1, ACCESS
+06E4  0EFC     MOVLW 0xFC
+06E6  CFDB     MOVFF PLUSW2, POSTINC2
+06E8  FFDE     NOP
+06EA  CFDB     MOVFF PLUSW2, POSTDEC2
+06EC  FFDD     NOP
+06EE  0E01     MOVLW 0x1
+06F0  50DB     MOVF PLUSW2, W, ACCESS
+06F2  6ECF     MOVWF TMR1H, ACCESS
+06F4  50DF     MOVF INDF2, W, ACCESS
+06F6  6ECE     MOVWF TMR1, ACCESS
+06F8  52E5     MOVF POSTDEC1, F, ACCESS
 06FA  52E5     MOVF POSTDEC1, F, ACCESS
 06FC  52E5     MOVF POSTDEC1, F, ACCESS
-06FE  52E5     MOVF POSTDEC1, F, ACCESS
-0700  CFE5     MOVFF POSTDEC1, FSR2H
-0702  FFDA     NOP
-0704  CFE7     MOVFF INDF1, FSR2
-0706  FFD9     NOP
-0708  0012     RETURN 0
+06FE  CFE5     MOVFF POSTDEC1, FSR2H
+0700  FFDA     NOP
+0702  CFE7     MOVFF INDF1, FSR2
+0704  FFD9     NOP
+0706  0012     RETURN 0
 ---  /MCC18/v3_39/src/pmc_common/Timers/t1open.c  -------------------------------------------------------
-0690  CFD9     MOVFF FSR2, POSTINC1
-0692  FFE6     NOP
-0694  CFDA     MOVFF FSR2H, POSTINC1
-0696  FFE6     NOP
-0698  CFE1     MOVFF FSR1, FSR2
-069A  FFD9     NOP
-069C  CFE2     MOVFF FSR1H, FSR2H
-069E  FFDA     NOP
-06A0  0EFD     MOVLW 0xFD
-06A2  50DB     MOVF PLUSW2, W, ACCESS
-06A4  0B7E     ANDLW 0x7E
-06A6  6ECD     MOVWF T1CON, ACCESS
-06A8  0EFD     MOVLW 0xFD
-06AA  ACDB     BTFSS PLUSW2, 6, ACCESS
-06AC  D002     BRA 0x6B2
-06AE  8ECD     BSF T1CON, 7, ACCESS
-06B0  D001     BRA 0x6B4
-06B2  9ECD     BCF T1CON, 7, ACCESS
-06B4  6ACF     CLRF TMR1H, ACCESS
-06B6  6ACE     CLRF TMR1, ACCESS
-06B8  909E     BCF PIR1, 0, ACCESS
-06BA  AEDB     BTFSS PLUSW2, 7, ACCESS
-06BC  D002     BRA 0x6C2
-06BE  809D     BSF PIE1, 0, ACCESS
-06C0  D001     BRA 0x6C4
-06C2  909D     BCF PIE1, 0, ACCESS
-06C4  80CD     BSF T1CON, 0, ACCESS
-06C6  52E5     MOVF POSTDEC1, F, ACCESS
-06C8  CFE5     MOVFF POSTDEC1, FSR2H
-06CA  FFDA     NOP
-06CC  CFE7     MOVFF INDF1, FSR2
-06CE  FFD9     NOP
-06D0  0012     RETURN 0
+068E  CFD9     MOVFF FSR2, POSTINC1
+0690  FFE6     NOP
+0692  CFDA     MOVFF FSR2H, POSTINC1
+0694  FFE6     NOP
+0696  CFE1     MOVFF FSR1, FSR2
+0698  FFD9     NOP
+069A  CFE2     MOVFF FSR1H, FSR2H
+069C  FFDA     NOP
+069E  0EFD     MOVLW 0xFD
+06A0  50DB     MOVF PLUSW2, W, ACCESS
+06A2  0B7E     ANDLW 0x7E
+06A4  6ECD     MOVWF T1CON, ACCESS
+06A6  0EFD     MOVLW 0xFD
+06A8  ACDB     BTFSS PLUSW2, 6, ACCESS
+06AA  D002     BRA 0x6B0
+06AC  8ECD     BSF T1CON, 7, ACCESS
+06AE  D001     BRA 0x6B2
+06B0  9ECD     BCF T1CON, 7, ACCESS
+06B2  6ACF     CLRF TMR1H, ACCESS
+06B4  6ACE     CLRF TMR1, ACCESS
+06B6  909E     BCF PIR1, 0, ACCESS
+06B8  AEDB     BTFSS PLUSW2, 7, ACCESS
+06BA  D002     BRA 0x6C0
+06BC  809D     BSF PIE1, 0, ACCESS
+06BE  D001     BRA 0x6C2
+06C0  909D     BCF PIE1, 0, ACCESS
+06C2  80CD     BSF T1CON, 0, ACCESS
+06C4  52E5     MOVF POSTDEC1, F, ACCESS
+06C6  CFE5     MOVFF POSTDEC1, FSR2H
+06C8  FFDA     NOP
+06CA  CFE7     MOVFF INDF1, FSR2
+06CC  FFD9     NOP
+06CE  0012     RETURN 0
 ---  /MCC18/v3_39/src/pmc_common/Timers/t0write.c  ------------------------------------------------------
-070A  CFD9     MOVFF FSR2, POSTINC1
-070C  FFE6     NOP
-070E  CFDA     MOVFF FSR2H, POSTINC1
-0710  FFE6     NOP
-0712  CFE1     MOVFF FSR1, FSR2
-0714  FFD9     NOP
-0716  CFE2     MOVFF FSR1H, FSR2H
-0718  FFDA     NOP
+0708  CFD9     MOVFF FSR2, POSTINC1
+070A  FFE6     NOP
+070C  CFDA     MOVFF FSR2H, POSTINC1
+070E  FFE6     NOP
+0710  CFE1     MOVFF FSR1, FSR2
+0712  FFD9     NOP
+0714  CFE2     MOVFF FSR1H, FSR2H
+0716  FFDA     NOP
+0718  52E6     MOVF POSTINC1, F, ACCESS
 071A  52E6     MOVF POSTINC1, F, ACCESS
-071C  52E6     MOVF POSTINC1, F, ACCESS
-071E  0EFC     MOVLW 0xFC
-0720  CFDB     MOVFF PLUSW2, POSTINC2
-0722  FFDE     NOP
-0724  CFDB     MOVFF PLUSW2, POSTDEC2
-0726  FFDD     NOP
-0728  0E01     MOVLW 0x1
-072A  50DB     MOVF PLUSW2, W, ACCESS
-072C  6ED7     MOVWF TMR0H, ACCESS
-072E  50DF     MOVF INDF2, W, ACCESS
-0730  6ED6     MOVWF TMR0, ACCESS
+071C  0EFC     MOVLW 0xFC
+071E  CFDB     MOVFF PLUSW2, POSTINC2
+0720  FFDE     NOP
+0722  CFDB     MOVFF PLUSW2, POSTDEC2
+0724  FFDD     NOP
+0726  0E01     MOVLW 0x1
+0728  50DB     MOVF PLUSW2, W, ACCESS
+072A  6ED7     MOVWF TMR0H, ACCESS
+072C  50DF     MOVF INDF2, W, ACCESS
+072E  6ED6     MOVWF TMR0, ACCESS
+0730  52E5     MOVF POSTDEC1, F, ACCESS
 0732  52E5     MOVF POSTDEC1, F, ACCESS
 0734  52E5     MOVF POSTDEC1, F, ACCESS
-0736  52E5     MOVF POSTDEC1, F, ACCESS
-0738  CFE5     MOVFF POSTDEC1, FSR2H
-073A  FFDA     NOP
-073C  CFE7     MOVFF INDF1, FSR2
-073E  FFD9     NOP
-0740  0012     RETURN 0
+0736  CFE5     MOVFF POSTDEC1, FSR2H
+0738  FFDA     NOP
+073A  CFE7     MOVFF INDF1, FSR2
+073C  FFD9     NOP
+073E  0012     RETURN 0
 ---  /MCC18/v3_39/src/pmc_common/Timers/t0open.c  -------------------------------------------------------
-0742  CFD9     MOVFF FSR2, POSTINC1
-0744  FFE6     NOP
-0746  CFDA     MOVFF FSR2H, POSTINC1
-0748  FFE6     NOP
-074A  CFE1     MOVFF FSR1, FSR2
-074C  FFD9     NOP
-074E  CFE2     MOVFF FSR1H, FSR2H
-0750  FFDA     NOP
-0752  0EFD     MOVLW 0xFD
-0754  50DB     MOVF PLUSW2, W, ACCESS
-0756  0B7F     ANDLW 0x7F
-0758  6ED5     MOVWF T0CON, ACCESS
-075A  6AD7     CLRF TMR0H, ACCESS
-075C  6AD6     CLRF TMR0, ACCESS
-075E  94F2     BCF INTCON, 2, ACCESS
-0760  0EFD     MOVLW 0xFD
-0762  AEDB     BTFSS PLUSW2, 7, ACCESS
-0764  D002     BRA 0x76A
-0766  8AF2     BSF INTCON, 5, ACCESS
-0768  D001     BRA 0x76C
-076A  9AF2     BCF INTCON, 5, ACCESS
-076C  8ED5     BSF T0CON, 7, ACCESS
-076E  52E5     MOVF POSTDEC1, F, ACCESS
-0770  CFE5     MOVFF POSTDEC1, FSR2H
-0772  FFDA     NOP
-0774  CFE7     MOVFF INDF1, FSR2
-0776  FFD9     NOP
-0778  0012     RETURN 0
+0740  CFD9     MOVFF FSR2, POSTINC1
+0742  FFE6     NOP
+0744  CFDA     MOVFF FSR2H, POSTINC1
+0746  FFE6     NOP
+0748  CFE1     MOVFF FSR1, FSR2
+074A  FFD9     NOP
+074C  CFE2     MOVFF FSR1H, FSR2H
+074E  FFDA     NOP
+0750  0EFD     MOVLW 0xFD
+0752  50DB     MOVF PLUSW2, W, ACCESS
+0754  0B7F     ANDLW 0x7F
+0756  6ED5     MOVWF T0CON, ACCESS
+0758  6AD7     CLRF TMR0H, ACCESS
+075A  6AD6     CLRF TMR0, ACCESS
+075C  94F2     BCF INTCON, 2, ACCESS
+075E  0EFD     MOVLW 0xFD
+0760  AEDB     BTFSS PLUSW2, 7, ACCESS
+0762  D002     BRA 0x768
+0764  8AF2     BSF INTCON, 5, ACCESS
+0766  D001     BRA 0x76A
+0768  9AF2     BCF INTCON, 5, ACCESS
+076A  8ED5     BSF T0CON, 7, ACCESS
+076C  52E5     MOVF POSTDEC1, F, ACCESS
+076E  CFE5     MOVFF POSTDEC1, FSR2H
+0770  FFDA     NOP
+0772  CFE7     MOVFF INDF1, FSR2
+0774  FFD9     NOP
+0776  0012     RETURN 0
