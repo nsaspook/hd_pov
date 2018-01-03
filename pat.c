@@ -113,17 +113,34 @@ void interrupt high_priority tm_handler(void) // timer/serial functions are hand
 		switch (l_state) {
 		case 0:
 			G_OUT = 0;
+			R_OUT = 0;
+			B_OUT = 0;
 			l_state = 1; // off time after index to start time
 			break;
 		case 1:
-			G_OUT = 1;
+			switch (V.line_num) {
+			case 0:
+				G_OUT = 1;
+				break;
+			case 1:
+				R_OUT = 1;
+				break;
+			default:
+				B_OUT = 1;
+				break;
+			}
+
 			l_state = 2; // on start time duration for strobe pulse
 			break;
 		case 2:
 			G_OUT = 0; // wait to next rotation
+			R_OUT = 0;
+			B_OUT = 0;
 			break;
 		default:
 			G_OUT = 0;
+			R_OUT = 0;
+			B_OUT = 0;
 			break;
 		}
 	}
@@ -146,29 +163,27 @@ void interrupt high_priority tm_handler(void) // timer/serial functions are hand
 
 }
 
- void USART_putc(unsigned char c)
- {
-     while(!TXSTAbits.TRMT);
-     TXREG = c;
- }
-  
- void USART_puts(unsigned char *s)
- {
-     while(*s)
-     {
-         USART_putc(*s);
-         s++;
-     }
- }
- 
-  void USART_putsr(const unsigned char *s)
- {
-     while(*s)
-     {
-         USART_putc(*s);
-         s++;
-     }
- }
+void USART_putc(unsigned char c)
+{
+	while (!TXSTAbits.TRMT);
+	TXREG = c;
+}
+
+void USART_puts(unsigned char *s)
+{
+	while (*s) {
+		USART_putc(*s);
+		s++;
+	}
+}
+
+void USART_putsr(const unsigned char *s)
+{
+	while (*s) {
+		USART_putc(*s);
+		s++;
+	}
+}
 
 /* main loop routine */
 int16_t sw_work(void)
