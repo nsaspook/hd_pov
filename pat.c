@@ -61,7 +61,7 @@ int16_t sw_work(void);
 void init_rmsmon(void);
 uint8_t init_rms_params(void);
 
-int8_t str[24];
+uint8_t str[24];
 near volatile struct L_data *L_ptr;
 near volatile struct V_data V;
 volatile uint16_t timer0_off = TIMEROFFSET, timer1_off = SAMPLEFREQ;
@@ -146,18 +146,42 @@ void interrupt high_priority tm_handler(void) // timer/serial functions are hand
 
 }
 
+ void USART_putc(unsigned char c)
+ {
+     while(!TXSTAbits.TRMT);
+     TXREG = c;
+ }
+  
+ void USART_puts(unsigned char *s)
+ {
+     while(*s)
+     {
+         USART_putc(*s);
+         s++;
+     }
+ }
+ 
+  void USART_putsr(const unsigned char *s)
+ {
+     while(*s)
+     {
+         USART_putc(*s);
+         s++;
+     }
+ }
+
 /* main loop routine */
 int16_t sw_work(void)
 {
 	ClrWdt(); // reset watchdog
 
 	if (!SW1) {
-		//		putrsUSART("Timer limit ");
-		//		itoa(l_full, str);
-		//		putsUSART(str);
-		//		putrsUSART("Timer value ");
-		//		itoa(L_ptr->strobe[0], str);
-		//		putsUSART(str);
+		USART_putsr("Timer limit ");
+		itoa(str, l_full, 10);
+		USART_puts(str);
+		USART_putsr("Timer value ");
+		itoa(str, L_ptr->strobe[0], 10);
+		USART_puts(str);
 		LED1 = 1;
 	} else {
 		LED1 = 0;
@@ -205,12 +229,10 @@ void init_rmsmon(void)
 	WRITETIMER1(timer1_off);
 	/* data link */
 	COMM_ENABLE = TRUE; // for PICDEM4 onboard RS-232, not used on custom board
-	//	OpenUSART(USART_TX_INT_OFF &
-	//		USART_RX_INT_ON &
-	//		USART_ASYNCH_MODE &
-	//		USART_EIGHT_BIT &
-	//		USART_CONT_RX, 64); // 40MHz fosc 9600
-
+	TXSTAbits.TXEN = 1;
+	RCSTAbits.CREN = 1;
+	RCSTAbits.SPEN = 1;
+	TXSTAbits.SYNC = 0;
 	TXSTAbits.SYNC = 0;
 	TXSTAbits.BRGH = 0;
 	BAUDCTLbits.BRG16 = 0;
@@ -218,13 +240,16 @@ void init_rmsmon(void)
 
 	/*      work int thread setup */
 	INTCONbits.TMR0IE = 1; // enable int
-	INTCON2bits.TMR0IP = 1; // make it high level
+	INTCON2bits.TMR0IP = 1; // make it high P
 
-	PIE1bits.TMR1IE = 1; // enable int
-	IPR1bits.TMR1IP = 1; // make it high level
+	PIE1bits.TMR1IE = 1;
+	IPR1bits.TMR1IP = 1;
 
 	INTCONbits.INT0IE = 1; // enable RPM sensor input
 	INTCON2bits.RBPU = 0; // enable weak pull-ups
+
+	PIE1bits.RCIE = 1; // enable rs232 serial receive interrupts
+	IPR1bits.RCIP = 1;
 
 	init_rms_params();
 
