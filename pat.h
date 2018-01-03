@@ -39,7 +39,7 @@ typedef struct L_data {
 #define	LEDON	0   // logic low lights led
 #define	LEDOFF	1
 
-#define	TIMEROFFSET	18000		// timer0 16bit counter value for ~1 second to overflow 44268
+#define	TIMEROFFSET	18000		// timer0 16bit counter value for ~1 second to overflow 
 #define	SAMPLEFREQ	60000		// timer1 default value
 
 #define RMSPORTA	TRISA
