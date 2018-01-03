@@ -49,6 +49,8 @@
 
 /*
  * Driver for hard-drive strobe for POV demo
+ * Versions
+ * 1.0 RGB support
  */
 
 #include  <xc.h>
@@ -70,6 +72,7 @@ volatile uint8_t l_state = 2;
 volatile uint16_t l_full = strobe_limit_l;
 
 static const uint8_t build_date[] = __DATE__, build_time[] = __TIME__;
+static const uint8_t versions[]="1.0";
 
 void interrupt high_priority tm_handler(void) // timer/serial functions are handled here
 {
