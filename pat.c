@@ -1,4 +1,4 @@
-
+// HD POV Version for XC8
 // PIC18F1320 Configuration Bit Settings 
 
 // CONFIG1H
