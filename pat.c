@@ -53,54 +53,40 @@
  * Driver for hard-drive strobe for POV demo
  */
 
-#include <timers.h>
+#include  <xc.h>
 #include <stdlib.h>
-#include <usart.h>
 #include <stdio.h>
-#include <EEP.h>
 #include "pat.h"
 #include <string.h>
 
-void tm_handler(void);
 int16_t sw_work(void);
 void init_rmsmon(void);
 uint8_t init_rms_params(void);
 
-#pragma udata
 int8_t str[24];
-near struct L_data *L_ptr;
-#pragma udata access ACCESSBANK
+near volatile struct L_data *L_ptr;
+//#pragma udata access ACCESSBANK
 near volatile struct V_data V;
-volatile uint16_t timer0_off = TIMEROFFSET;
+volatile uint16_t timer0_off = TIMEROFFSET, timer1_off = SAMPLEFREQ;
 near volatile struct L_data L[2];
 volatile uint8_t l_state = 2;
 volatile uint16_t l_full = strobe_limit_l;
 
-const far rom int8_t build_date[] = __DATE__, build_time[] = __TIME__;
+static const uint8_t build_date[] = __DATE__, build_time[] = __TIME__;
 
-#pragma code tm_interrupt = 0x8
-
-void tm_int(void)
-{
-	_asm goto tm_handler _endasm
-}
-#pragma code
-
-#pragma interrupt tm_handler
-
-void tm_handler(void) // timer/serial functions are handled here
+void interrupt high_priority tm_handler(void) // timer/serial functions are handled here
 {
 
 	if (INTCONbits.INT0IF) { // Hall effect index signal, start of rotation
 		INTCONbits.INT0IF = FALSE;
-		RPMLED = !RPMLED;
+		RPMLED != RPMLED;
 		if (l_state == 1) { // off state too long for full rotation, hall signal while in state 1
 			l_full += strobe_adjust; // off state lower limit adjustments for smooth strobe rotation
 		}
 		l_state = 0; // restart lamp flashing sequence, off time
 
 		L_ptr = &L[V.line_num]; // select line strobe data
-		
+
 		/* limit rotational timer values */
 		switch (V.line_num) {
 		case 0:
@@ -125,7 +111,7 @@ void tm_handler(void) // timer/serial functions are handled here
 
 	if (PIR1bits.TMR1IF || l_state == 0) { //      Timer1 int handler, for strobe timing
 		PIR1bits.TMR1IF = FALSE;
-		WriteTimer1(L_ptr->strobe[l_state]); // strobe positioning during rotation
+		WRITETIMER1(L_ptr->strobe[l_state]); // strobe positioning during rotation
 
 		switch (l_state) {
 		case 0:
@@ -157,8 +143,8 @@ void tm_handler(void) // timer/serial functions are handled here
 
 	if (INTCONbits.TMR0IF) { //      check timer0 
 		INTCONbits.TMR0IF = FALSE; //      clear interrupt flag
-		WriteTimer0(timer0_off);
-		LED5 = !LED5; // active LED blinker
+		WRITETIMER0(timer0_off);
+		LED5 != LED5; // active LED blinker
 	}
 
 }
@@ -169,12 +155,12 @@ int16_t sw_work(void)
 	ClrWdt(); // reset watchdog
 
 	if (!SW1) {
-		putrsUSART("Timer limit ");
-		itoa(l_full, str);
-		putsUSART(str);
-		putrsUSART("Timer value ");
-		itoa(L_ptr->strobe[0], str);
-		putsUSART(str);
+		//		putrsUSART("Timer limit ");
+		//		itoa(l_full, str);
+		//		putsUSART(str);
+		//		putrsUSART("Timer value ");
+		//		itoa(L_ptr->strobe[0], str);
+		//		putsUSART(str);
 		LED1 = 1;
 	} else {
 		LED1 = 0;
@@ -214,17 +200,20 @@ void init_rmsmon(void)
 	LED6 = LEDON;
 	RPMLED = LEDON;
 	timer0_off = TIMEROFFSET; // blink fast
-	OpenTimer0(TIMER_INT_ON & T0_16BIT & T0_SOURCE_INT & T0_PS_1_256); // led blinker
-	WriteTimer0(timer0_off); //	start timer0 at ~1/2 second ticks
-	OpenTimer1(TIMER_INT_ON & T1_16BIT_RW & T1_SOURCE_INT & T1_PS_1_2 & T1_OSC1EN_OFF & T1_SYNC_EXT_OFF); // strobe position clock
-	WriteTimer1(SAMPLEFREQ);
+	//	OpenTimer0(TIMER_INT_ON & T0_16BIT & T0_SOURCE_INT & T0_PS_1_256); // led blinker
+	T0CON = 0b10000111;
+	WRITETIMER0(timer0_off); //	start timer0 at ~1/2 second ticks
+	//	OpenTimer1(TIMER_INT_ON & T1_16BIT_RW & T1_SOURCE_INT & T1_PS_1_2 & T1_OSC1EN_OFF & T1_SYNC_EXT_OFF); // strobe position clock
+	T1CON = 0b10010101;
+	WRITETIMER1(timer1_off);
 	/* data link */
 	COMM_ENABLE = TRUE; // for PICDEM4 onboard RS-232, not used on custom board
-	OpenUSART(USART_TX_INT_OFF &
-		USART_RX_INT_ON &
-		USART_ASYNCH_MODE &
-		USART_EIGHT_BIT &
-		USART_CONT_RX, 64); // 40MHz fosc 9600
+	//	OpenUSART(USART_TX_INT_OFF &
+	//		USART_RX_INT_ON &
+	//		USART_ASYNCH_MODE &
+	//		USART_EIGHT_BIT &
+	//		USART_CONT_RX, 64); // 40MHz fosc 9600
+	
 	TXSTAbits.SYNC = 0;
 	TXSTAbits.BRGH = 0;
 	BAUDCTLbits.BRG16 = 0;
@@ -257,7 +246,7 @@ uint8_t init_rms_params(void)
 	L_ptr = &L[0];
 	/* two line strobes in 3 16-bit timer values for spacing */
 	/* for an interrupt driven state machine */
-	L[0].strobe[0] = 60000; 
+	L[0].strobe[0] = 60000;
 	L[0].strobe[1] = 64900;
 	L[0].strobe[2] = 10000;
 	L[1].strobe[0] = 50000; // 62000
