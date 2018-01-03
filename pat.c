@@ -67,16 +67,15 @@ uint8_t str[24];
 near volatile struct L_data *L_ptr;
 near volatile struct V_data V;
 volatile uint16_t timer0_off = TIMEROFFSET, timer1_off = SAMPLEFREQ;
-near volatile struct L_data L[2];
+near volatile struct L_data L[4];
 volatile uint8_t l_state = 2;
 volatile uint16_t l_full = strobe_limit_l;
 
 static const uint8_t build_date[] = __DATE__, build_time[] = __TIME__;
-static const uint8_t versions[]="1.0";
+static const uint8_t versions[] = "1.0";
 
 void interrupt high_priority tm_handler(void) // timer/serial functions are handled here
 {
-
 	if (INTCONbits.INT0IF) { // Hall effect index signal, start of rotation
 		INTCONbits.INT0IF = FALSE;
 		RPMLED = (uint8_t)!RPMLED;
@@ -99,17 +98,24 @@ void interrupt high_priority tm_handler(void) // timer/serial functions are hand
 			if (L_ptr->strobe[0] < l_full)
 				L_ptr->strobe[0] = l_full; // set to sliding lower limit
 			break;
+		case 2:
+			L_ptr->strobe[0] -= strobe_around; // start sliding the positions
+			if (L_ptr->strobe[0] < l_full)
+				L_ptr->strobe[0] = strobe_limit_h; // set to upper limit rollover
+			break;
 		default:
 			L_ptr->strobe[0] -= strobe_down;
 			if (L_ptr->strobe[0] < l_full)
 				L_ptr->strobe[0] = strobe_limit_h;
 			break;
 		}
-
+		V.c_line_num = V.line_num; // save value for line sequencing
 		V.line_num++;
+		if (V.line_num >= 3) // rollover for RGB
+			V.line_num = 0;
 	}
 
-	if (PIR1bits.TMR1IF || l_state == 0) { //      Timer1 int handler, for strobe timing
+	if (PIR1bits.TMR1IF || l_state == 0) { //      Timer1 int handler, for strobe timing, line sequencing
 		PIR1bits.TMR1IF = FALSE;
 		WRITETIMER1(L_ptr->strobe[l_state]); // strobe positioning during rotation
 
@@ -121,12 +127,15 @@ void interrupt high_priority tm_handler(void) // timer/serial functions are hand
 			l_state = 1; // off time after index to start time
 			break;
 		case 1:
-			switch (V.line_num) {
+			switch (V.c_line_num) {
 			case 0:
 				G_OUT = 1;
 				break;
 			case 1:
 				R_OUT = 1;
+				break;
+			case 2:
+				B_OUT = 1;
 				break;
 			default:
 				B_OUT = 1;
@@ -292,6 +301,12 @@ uint8_t init_rms_params(void)
 	L[1].strobe[0] = 50000; // 62000
 	L[1].strobe[1] = 64900;
 	L[1].strobe[2] = 10000;
+	L[2].strobe[0] = 40000;
+	L[2].strobe[1] = 64900;
+	L[2].strobe[2] = 10000;
+	L[3].strobe[0] = 40000;
+	L[3].strobe[1] = 64900;
+	L[3].strobe[2] = 10000;
 	return 0;
 }
 

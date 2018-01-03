@@ -19,17 +19,18 @@ typedef signed long long int64_t;
 #endif
 
 typedef struct V_data { // ISR data structure
-    uint8_t valid : 1;
-    uint8_t comm : 1;
-    uint8_t comm_state;
-    uint8_t spinning : 1;
-    uint8_t boot_code : 1;
-    uint8_t line_num :1;
-    uint8_t rx_data, tx_data;
+	uint8_t valid : 1;
+	uint8_t comm : 1;
+	uint8_t comm_state;
+	uint8_t spinning : 1;
+	uint8_t boot_code : 1;
+	uint8_t line_num : 2;
+	uint8_t c_line_num : 2;
+	uint8_t rx_data, tx_data;
 } V_data;
 
 typedef struct L_data {
-	uint16_t strobe[3];	
+	uint16_t strobe[3];
 } L_data;
 
 #define TRUE	1
@@ -64,6 +65,7 @@ typedef struct L_data {
 
 #define strobe_up	67
 #define strobe_down	31
+#define strobe_around	109
 #define strobe_adjust	11
 #define strobe_limit_l	24250 // this limit +500 is from the rs-232 port
 #define strobe_limit_h	65530
