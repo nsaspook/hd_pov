@@ -1,8 +1,6 @@
 
 // PIC18F1320 Configuration Bit Settings 
 
-#include <p18f1320.h>
-
 // CONFIG1H
 #pragma config OSC = HSPLL      // Oscillator Selection bits 40MHz fosc with PLL and 10MHz clock input
 #pragma config FSCM = ON        // Fail-Safe Clock Monitor Enable bit (Fail-Safe Clock Monitor enabled)
@@ -65,7 +63,6 @@ uint8_t init_rms_params(void);
 
 int8_t str[24];
 near volatile struct L_data *L_ptr;
-//#pragma udata access ACCESSBANK
 near volatile struct V_data V;
 volatile uint16_t timer0_off = TIMEROFFSET, timer1_off = SAMPLEFREQ;
 near volatile struct L_data L[2];
@@ -79,7 +76,7 @@ void interrupt high_priority tm_handler(void) // timer/serial functions are hand
 
 	if (INTCONbits.INT0IF) { // Hall effect index signal, start of rotation
 		INTCONbits.INT0IF = FALSE;
-		RPMLED != RPMLED;
+		RPMLED = (uint8_t)!RPMLED;
 		if (l_state == 1) { // off state too long for full rotation, hall signal while in state 1
 			l_full += strobe_adjust; // off state lower limit adjustments for smooth strobe rotation
 		}
@@ -144,7 +141,7 @@ void interrupt high_priority tm_handler(void) // timer/serial functions are hand
 	if (INTCONbits.TMR0IF) { //      check timer0 
 		INTCONbits.TMR0IF = FALSE; //      clear interrupt flag
 		WRITETIMER0(timer0_off);
-		LED5 != LED5; // active LED blinker
+		LED5 = (uint8_t)!LED5; // active LED blinker
 	}
 
 }
@@ -213,7 +210,7 @@ void init_rmsmon(void)
 	//		USART_ASYNCH_MODE &
 	//		USART_EIGHT_BIT &
 	//		USART_CONT_RX, 64); // 40MHz fosc 9600
-	
+
 	TXSTAbits.SYNC = 0;
 	TXSTAbits.BRGH = 0;
 	BAUDCTLbits.BRG16 = 0;
