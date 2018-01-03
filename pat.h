@@ -63,9 +63,21 @@ typedef struct L_data {
 #define RPMLED		LATBbits.LATB5
 #define SW1		PORTAbits.RA4
 
+#define PAT2		// display patterns
+
+
+#ifdef PAT1
 #define strobe_up	67
 #define strobe_down	31
 #define strobe_around	109
+#endif
+
+#ifdef PAT2
+#define strobe_up	30
+#define strobe_down	300
+#define strobe_around	1500
+#endif
+
 #define strobe_adjust	11
 #define strobe_limit_l	24250 // this limit +500 is from the rs-232 port
 #define strobe_limit_h	65530

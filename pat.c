@@ -88,6 +88,7 @@ void interrupt high_priority tm_handler(void) // timer/serial functions are hand
 
 		/* limit rotational timer values */
 		switch (V.line_num) {
+#ifdef PAT1
 		case 0:
 			L_ptr->strobe[0] -= strobe_down; // start sliding the positions
 			if (L_ptr->strobe[0] < l_full)
@@ -108,6 +109,29 @@ void interrupt high_priority tm_handler(void) // timer/serial functions are hand
 			if (L_ptr->strobe[0] < l_full)
 				L_ptr->strobe[0] = strobe_limit_h;
 			break;
+#endif
+#ifdef PAT2
+		case 0:
+			L_ptr->strobe[0] += strobe_down; // start sliding the positions
+			if (L_ptr->strobe[0] < l_full)
+				L_ptr->strobe[0] = l_full; // set to upper limit rollover
+			break;
+		case 1:
+			L_ptr->strobe[0] += strobe_up;
+			if (L_ptr->strobe[0] < l_full)
+				L_ptr->strobe[0] = l_full; // set to sliding lower limit
+			break;
+		case 2:
+			L_ptr->strobe[0] += strobe_around; // start sliding the positions
+			if (L_ptr->strobe[0] < l_full)
+				L_ptr->strobe[0] = l_full; // set to upper limit rollover
+			break;
+		default:
+			L_ptr->strobe[0] -= strobe_down;
+			if (L_ptr->strobe[0] < l_full)
+				L_ptr->strobe[0] = strobe_limit_h;
+			break;
+#endif		
 		}
 		V.c_line_num = V.line_num; // save value for line sequencing
 		V.line_num++;
