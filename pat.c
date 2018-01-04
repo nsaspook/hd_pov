@@ -51,6 +51,7 @@
  * Driver for hard-drive strobe for POV demo
  * Versions
  * 1.0 RGB support
+ * 1.1 multi sequence support
  */
 
 #include  <xc.h>
@@ -72,7 +73,7 @@ volatile uint8_t l_state = 2;
 volatile uint16_t l_full = strobe_limit_l;
 
 static const uint8_t build_date[] = __DATE__, build_time[] = __TIME__;
-static const uint8_t versions[] = "1.0";
+static const uint8_t versions[] = "1.1";
 
 void interrupt high_priority tm_handler(void) // timer/serial functions are handled here
 {
@@ -85,6 +86,7 @@ void interrupt high_priority tm_handler(void) // timer/serial functions are hand
 		l_state = 0; // restart lamp flashing sequence, off time
 
 		L_ptr = &L[V.line_num]; // select line strobe data
+		V.rotations++;
 
 		/* limit rotational timer values */
 		switch (V.line_num) {
@@ -135,8 +137,10 @@ void interrupt high_priority tm_handler(void) // timer/serial functions are hand
 		}
 		V.c_line_num = V.line_num; // save value for line sequencing
 		V.line_num++;
-		if (V.line_num >= 3) // rollover for RGB
+		if (V.line_num >= 3) {// rollover for RGB
 			V.line_num = 0;
+			V.patterns++;
+		}
 	}
 
 	if (PIR1bits.TMR1IF || l_state == 0) { //      Timer1 int handler, for strobe timing, line sequencing
@@ -172,6 +176,7 @@ void interrupt high_priority tm_handler(void) // timer/serial functions are hand
 			G_OUT = 0; // wait to next rotation
 			R_OUT = 0;
 			B_OUT = 0;
+			V.sequences++;
 			break;
 		default:
 			G_OUT = 0;
@@ -317,7 +322,7 @@ uint8_t init_rms_params(void)
 	V.line_num = 0;
 
 	L_ptr = &L[0];
-	/* two line strobes in 3 16-bit timer values for spacing */
+	/* three line strobes in 3 16-bit timer values for spacing */
 	/* for an interrupt driven state machine */
 	L[0].strobe[0] = 60000;
 	L[0].strobe[1] = 64900;

@@ -27,6 +27,7 @@ typedef struct V_data { // ISR data structure
 	uint8_t line_num : 2;
 	uint8_t c_line_num : 2;
 	uint8_t rx_data, tx_data;
+	uint16_t rotations, sequences, patterns;
 } V_data;
 
 typedef struct L_data {
@@ -73,9 +74,9 @@ typedef struct L_data {
 #endif
 
 #ifdef PAT2
-#define strobe_up	30
-#define strobe_down	300
-#define strobe_around	1500
+#define strobe_up	60
+#define strobe_down	360
+#define strobe_around	1080
 #endif
 
 #define strobe_adjust	11
