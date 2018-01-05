@@ -67,9 +67,9 @@ uint8_t init_rms_params(void);
 
 uint8_t str[24];
 near volatile struct L_data *L_ptr;
-near volatile struct V_data V={0};
+near volatile struct V_data V = {0};
 volatile uint16_t timer0_off = TIMEROFFSET, timer1_off = SAMPLEFREQ;
-near volatile struct L_data L[4]={0};
+near volatile struct L_data L[4] = {0};
 volatile uint8_t l_state = 2;
 volatile uint16_t l_full = strobe_limit_l, l_width = strobe_line, l_complete = strobe_complete;
 
@@ -128,12 +128,14 @@ void interrupt high_priority tm_handler(void) // timer/serial functions are hand
 			break;
 		case 1:
 			WRITETIMER1(l_width);
-			if (L_ptr->sequence.R)
-				R_OUT = 1;
-			if (L_ptr->sequence.G)
-				G_OUT = 1;
-			if (L_ptr->sequence.B)
-				B_OUT = 1;
+			if (!L_ptr->sequence.skip) {
+				if (L_ptr->sequence.R)
+					R_OUT = 1;
+				if (L_ptr->sequence.G)
+					G_OUT = 1;
+				if (L_ptr->sequence.B)
+					B_OUT = 1;
+			}
 
 			l_state = 2; // on start time duration for strobe pulse
 			break;
@@ -294,16 +296,16 @@ uint8_t init_rms_params(void)
 	L[0].strobe = 60000;
 	L[0].sequence.R = 1;
 	L[0].sequence.offset = strobe_up;
-	
+
 	L[1].strobe = 50000; // 62000
 	L[1].sequence.G = 1;
 	L[1].sequence.offset = strobe_down;
-	
+
 	L[2].strobe = 40000;
 	L[2].sequence.B = 1;
 	L[2].sequence.offset = strobe_around;
-	L[2].sequence.end=1;
-	
+	L[2].sequence.end = 1;
+
 	L[3].strobe = 30000;
 	L[3].sequence.R = 1;
 	L[3].sequence.G = 1;

@@ -31,12 +31,13 @@ typedef struct V_data { // ISR data structure
 } V_data;
 
 typedef struct L_seq {
-	uint8_t down:1;
-	uint8_t R:1;
-	uint8_t G:1;
-	uint8_t B:1;
-	uint8_t end:1;
-	uint16_t offset;
+	uint8_t down : 1;	// rotation direction
+	uint8_t R : 1;
+	uint8_t G : 1;
+	uint8_t B : 1;
+	uint8_t end : 1;	// last line in sequence
+	uint8_t skip : 1;	// don't light led
+	uint16_t offset;	// line movement 
 };
 
 /* data for one complete rotation*/
