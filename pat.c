@@ -53,6 +53,7 @@
  * 1.0 RGB support
  * 1.1 multi sequence support
  * 1.2 cleanup state machine and data logic
+ * 1.3 add routines for remote configuration of strobes
  */
 
 #include  <xc.h>
@@ -68,13 +69,13 @@ uint8_t init_rms_params(void);
 uint8_t str[24];
 near volatile struct L_data *L_ptr;
 near volatile struct V_data V = {0};
-volatile uint16_t timer0_off = TIMEROFFSET, timer1_off = SAMPLEFREQ;
-near volatile struct L_data L[4] = {0};
+uint16_t timer0_off = TIMEROFFSET, timer1_off = SAMPLEFREQ;
+near volatile struct L_data L[strobe_max] = {0};
 volatile uint8_t l_state = 2;
 volatile uint16_t l_full = strobe_limit_l, l_width = strobe_line, l_complete = strobe_complete;
 
-static const uint8_t build_date[] = __DATE__, build_time[] = __TIME__;
-static const uint8_t versions[] = "1.2";
+const uint8_t build_date[] = __DATE__, build_time[] = __TIME__;
+const uint8_t versions[] = "1.3";
 
 void interrupt high_priority tm_handler(void) // timer/serial functions are handled here
 {
@@ -109,13 +110,13 @@ void interrupt high_priority tm_handler(void) // timer/serial functions are hand
 			break;
 		}
 		V.line_num++;
-		if (L_ptr->sequence.end) {// rollover for sequence pattern
+		if (L_ptr->sequence.end || (V.line_num >= strobe_max)) { // rollover for sequence patterns
 			V.line_num = 0;
-			V.patterns++;
+			V.sequences++;
 		}
 	}
 
-	if (PIR1bits.TMR1IF || l_state == 0) { //      Timer1 int handler, for strobe timing, line sequencing
+	if (PIR1bits.TMR1IF || l_state == 0) { // Timer1 int handler, for strobe timing
 		PIR1bits.TMR1IF = FALSE;
 
 		switch (l_state) {
@@ -144,7 +145,6 @@ void interrupt high_priority tm_handler(void) // timer/serial functions are hand
 			G_OUT = 0; // wait to next rotation
 			R_OUT = 0;
 			B_OUT = 0;
-			V.sequences++;
 			break;
 		default:
 			WRITETIMER1(l_complete);
@@ -173,13 +173,13 @@ void interrupt high_priority tm_handler(void) // timer/serial functions are hand
 
 }
 
-void USART_putc(unsigned char c)
+void USART_putc(uint8_t c)
 {
 	while (!TXSTAbits.TRMT);
 	TXREG = c;
 }
 
-void USART_puts(unsigned char *s)
+void USART_puts(uint8_t *s)
 {
 	while (*s) {
 		USART_putc(*s);
@@ -187,7 +187,7 @@ void USART_puts(unsigned char *s)
 	}
 }
 
-void USART_putsr(const unsigned char *s)
+void USART_putsr(const uint8_t *s)
 {
 	while (*s) {
 		USART_putc(*s);
@@ -289,6 +289,12 @@ uint8_t init_rms_params(void)
 	V.comm = FALSE;
 	V.comm_state = 0;
 	V.line_num = 0;
+
+	USART_putsr("Version ");
+	USART_putsr(versions);
+	USART_putsr(", ");
+	USART_putsr(build_date);
+	USART_putsr(build_time);
 
 	L_ptr = &L[0];
 	/* three line strobes in 3 16-bit timer values for spacing */

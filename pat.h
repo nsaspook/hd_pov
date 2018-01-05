@@ -31,13 +31,13 @@ typedef struct V_data { // ISR data structure
 } V_data;
 
 typedef struct L_seq {
-	uint8_t down : 1;	// rotation direction
+	uint8_t down : 1; // rotation direction
 	uint8_t R : 1;
 	uint8_t G : 1;
 	uint8_t B : 1;
-	uint8_t end : 1;	// last line in sequence
-	uint8_t skip : 1;	// don't light led
-	uint16_t offset;	// line movement 
+	uint8_t end : 1; // last line in sequence
+	uint8_t skip : 1; // don't light led
+	uint16_t offset; // line movement 
 };
 
 /* data for one complete rotation*/
@@ -96,4 +96,5 @@ typedef struct L_data {
 #define strobe_limit_h	65530
 #define strobe_line	64900 // line width timer count
 #define strobe_complete	10000 // end of rotation timer count
+#define strobe_max	16
 #endif 
