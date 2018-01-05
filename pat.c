@@ -109,7 +109,7 @@ void interrupt high_priority tm_handler(void) // timer/serial functions are hand
 			break;
 		}
 		V.line_num++;
-		if (L_ptr->sequence.end) {// rollover for sequence
+		if (L_ptr->sequence.end) {// rollover for sequence pattern
 			V.line_num = 0;
 			V.patterns++;
 		}
