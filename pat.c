@@ -52,6 +52,7 @@
  * Versions
  * 1.0 RGB support
  * 1.1 multi sequence support
+ * 1.2 cleanup state machine and data logic
  */
 
 #include  <xc.h>
@@ -66,14 +67,14 @@ uint8_t init_rms_params(void);
 
 uint8_t str[24];
 near volatile struct L_data *L_ptr;
-near volatile struct V_data V;
+near volatile struct V_data V={0};
 volatile uint16_t timer0_off = TIMEROFFSET, timer1_off = SAMPLEFREQ;
-near volatile struct L_data L[4];
+near volatile struct L_data L[4]={0};
 volatile uint8_t l_state = 2;
-volatile uint16_t l_full = strobe_limit_l;
+volatile uint16_t l_full = strobe_limit_l, l_width = strobe_line, l_complete = strobe_complete;
 
 static const uint8_t build_date[] = __DATE__, build_time[] = __TIME__;
-static const uint8_t versions[] = "1.1";
+static const uint8_t versions[] = "1.2";
 
 void interrupt high_priority tm_handler(void) // timer/serial functions are handled here
 {
@@ -88,56 +89,27 @@ void interrupt high_priority tm_handler(void) // timer/serial functions are hand
 		L_ptr = &L[V.line_num]; // select line strobe data
 		V.rotations++;
 
-		/* limit rotational timer values */
-		switch (V.line_num) {
-#ifdef PAT1
+		/* limit rotational timer values during offsets */
+		switch (L_ptr->sequence.down) {
 		case 0:
-			L_ptr->strobe[0] -= strobe_down; // start sliding the positions
-			if (L_ptr->strobe[0] < l_full)
-				L_ptr->strobe[0] = strobe_limit_h; // set to upper limit rollover
+			L_ptr->strobe += L_ptr->sequence.offset;
+			if (L_ptr->strobe < l_full)
+				L_ptr->strobe = l_full; // set to sliding lower limit
 			break;
 		case 1:
-			L_ptr->strobe[0] += strobe_up;
-			if (L_ptr->strobe[0] < l_full)
-				L_ptr->strobe[0] = l_full; // set to sliding lower limit
+			L_ptr->strobe -= L_ptr->sequence.offset;
+			if (L_ptr->strobe < l_full)
+				L_ptr->strobe = strobe_limit_h;
 			break;
-		case 2:
-			L_ptr->strobe[0] -= strobe_around; // start sliding the positions
-			if (L_ptr->strobe[0] < l_full)
-				L_ptr->strobe[0] = strobe_limit_h; // set to upper limit rollover
-			break;
+
 		default:
-			L_ptr->strobe[0] -= strobe_down;
-			if (L_ptr->strobe[0] < l_full)
-				L_ptr->strobe[0] = strobe_limit_h;
+			L_ptr->strobe -= L_ptr->sequence.offset;
+			if (L_ptr->strobe < l_full)
+				L_ptr->strobe = strobe_limit_h;
 			break;
-#endif
-#ifdef PAT2
-		case 0:
-			L_ptr->strobe[0] += strobe_down; // start sliding the positions
-			if (L_ptr->strobe[0] < l_full)
-				L_ptr->strobe[0] = l_full; // set to upper limit rollover
-			break;
-		case 1:
-			L_ptr->strobe[0] += strobe_up;
-			if (L_ptr->strobe[0] < l_full)
-				L_ptr->strobe[0] = l_full; // set to sliding lower limit
-			break;
-		case 2:
-			L_ptr->strobe[0] += strobe_around; // start sliding the positions
-			if (L_ptr->strobe[0] < l_full)
-				L_ptr->strobe[0] = l_full; // set to upper limit rollover
-			break;
-		default:
-			L_ptr->strobe[0] -= strobe_down;
-			if (L_ptr->strobe[0] < l_full)
-				L_ptr->strobe[0] = strobe_limit_h;
-			break;
-#endif		
 		}
-		V.c_line_num = V.line_num; // save value for line sequencing
 		V.line_num++;
-		if (V.line_num >= 3) {// rollover for RGB
+		if (L_ptr->sequence.end) {// rollover for sequence
 			V.line_num = 0;
 			V.patterns++;
 		}
@@ -145,40 +117,35 @@ void interrupt high_priority tm_handler(void) // timer/serial functions are hand
 
 	if (PIR1bits.TMR1IF || l_state == 0) { //      Timer1 int handler, for strobe timing, line sequencing
 		PIR1bits.TMR1IF = FALSE;
-		WRITETIMER1(L_ptr->strobe[l_state]); // strobe positioning during rotation
 
 		switch (l_state) {
 		case 0:
+			WRITETIMER1(L_ptr->strobe); // strobe positioning during rotation
 			G_OUT = 0;
 			R_OUT = 0;
 			B_OUT = 0;
 			l_state = 1; // off time after index to start time
 			break;
 		case 1:
-			switch (V.c_line_num) {
-			case 0:
-				G_OUT = 1;
-				break;
-			case 1:
+			WRITETIMER1(l_width);
+			if (L_ptr->sequence.R)
 				R_OUT = 1;
-				break;
-			case 2:
+			if (L_ptr->sequence.G)
+				G_OUT = 1;
+			if (L_ptr->sequence.B)
 				B_OUT = 1;
-				break;
-			default:
-				B_OUT = 1;
-				break;
-			}
 
 			l_state = 2; // on start time duration for strobe pulse
 			break;
 		case 2:
+			WRITETIMER1(l_complete);
 			G_OUT = 0; // wait to next rotation
 			R_OUT = 0;
 			B_OUT = 0;
 			V.sequences++;
 			break;
 		default:
+			WRITETIMER1(l_complete);
 			G_OUT = 0;
 			R_OUT = 0;
 			B_OUT = 0;
@@ -236,7 +203,7 @@ int16_t sw_work(void)
 		itoa(str, l_full, 10);
 		USART_puts(str);
 		USART_putsr("Timer value ");
-		itoa(str, L_ptr->strobe[0], 10);
+		itoa(str, L_ptr->strobe, 10);
 		USART_puts(str);
 		LED1 = 1;
 	} else {
@@ -324,18 +291,24 @@ uint8_t init_rms_params(void)
 	L_ptr = &L[0];
 	/* three line strobes in 3 16-bit timer values for spacing */
 	/* for an interrupt driven state machine */
-	L[0].strobe[0] = 60000;
-	L[0].strobe[1] = 64900;
-	L[0].strobe[2] = 10000;
-	L[1].strobe[0] = 50000; // 62000
-	L[1].strobe[1] = 64900;
-	L[1].strobe[2] = 10000;
-	L[2].strobe[0] = 40000;
-	L[2].strobe[1] = 64900;
-	L[2].strobe[2] = 10000;
-	L[3].strobe[0] = 40000;
-	L[3].strobe[1] = 64900;
-	L[3].strobe[2] = 10000;
+	L[0].strobe = 60000;
+	L[0].sequence.R = 1;
+	L[0].sequence.offset = strobe_up;
+	
+	L[1].strobe = 50000; // 62000
+	L[1].sequence.G = 1;
+	L[1].sequence.offset = strobe_down;
+	
+	L[2].strobe = 40000;
+	L[2].sequence.B = 1;
+	L[2].sequence.offset = strobe_around;
+	L[2].sequence.end=1;
+	
+	L[3].strobe = 30000;
+	L[3].sequence.R = 1;
+	L[3].sequence.G = 1;
+	L[3].sequence.B = 1;
+	L[3].sequence.offset = 0;
 	return 0;
 }
 

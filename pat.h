@@ -30,8 +30,19 @@ typedef struct V_data { // ISR data structure
 	uint16_t rotations, sequences, patterns;
 } V_data;
 
+typedef struct L_seq {
+	uint8_t down:1;
+	uint8_t R:1;
+	uint8_t G:1;
+	uint8_t B:1;
+	uint8_t end:1;
+	uint16_t offset;
+};
+
+/* data for one complete rotation*/
 typedef struct L_data {
-	uint16_t strobe[3];
+	uint16_t strobe;
+	struct L_seq sequence;
 } L_data;
 
 #define TRUE	1
@@ -80,6 +91,8 @@ typedef struct L_data {
 #endif
 
 #define strobe_adjust	11
-#define strobe_limit_l	24250 // this limit +500 is from the rs-232 port
+#define strobe_limit_l	24250 // this limit is calc'd from the rs-232 port
 #define strobe_limit_h	65530
+#define strobe_line	64900 // line width timer count
+#define strobe_complete	10000 // end of rotation timer count
 #endif 
