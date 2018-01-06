@@ -218,6 +218,7 @@ int16_t sw_work(void)
 
 	/* command state machine */
 	if (V.comm) {
+		V.comm = FALSE;
 		switch (V.comm_state) {
 		case APP_STATE_INIT:
 			switch (V.rx_data) {
