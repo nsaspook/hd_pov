@@ -18,10 +18,22 @@ typedef signed long int32_t;
 typedef signed long long int64_t;
 #endif
 
+typedef enum {
+	/* rs232 Application's state machine's initial state. */
+	APP_STATE_INIT = 0,
+
+	APP_STATE_WAIT_FOR_PDATA,
+	APP_STATE_WAIT_FOR_ADATA,
+
+	/* Application Error state*/
+	APP_STATE_ERROR
+
+} APP_STATES;
+
 typedef struct V_data { // ISR data structure
 	uint8_t valid : 1;
 	uint8_t comm : 1;
-	uint8_t comm_state;
+	APP_STATES comm_state;
 	uint8_t spinning : 1;
 	uint8_t boot_code : 1;
 	uint8_t line_num : 2;

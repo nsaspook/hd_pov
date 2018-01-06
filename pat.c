@@ -198,6 +198,10 @@ void USART_putsr(const uint8_t *s)
 /* main loop routine */
 int16_t sw_work(void)
 {
+	static uint8_t position = 0, offset = 0;
+	static struct L_data L_tmp;
+	static uint8_t *L_tmp_ptr = (void*) &L_tmp;
+
 	ClrWdt(); // reset watchdog
 
 	if (!SW1) {
@@ -210,6 +214,44 @@ int16_t sw_work(void)
 		LED1 = 1;
 	} else {
 		LED1 = 0;
+	}
+
+	/* command state machine */
+	if (V.comm) {
+		switch (V.comm_state) {
+		case APP_STATE_INIT:
+			switch (V.rx_data) {
+			case 'u':
+			case 'U':
+				V.comm_state = APP_STATE_WAIT_FOR_PDATA;
+				itoa(str, sizeof(L_tmp), 10);
+				USART_putsr(" OK ");
+				USART_puts(str); // send size of data array
+				break;
+			default:
+				USART_putsr(" NAK");
+				break;
+			}
+			break;
+		case APP_STATE_WAIT_FOR_PDATA:
+			position = V.rx_data;
+			offset = 0;
+			V.comm_state = APP_STATE_WAIT_FOR_ADATA;
+			USART_putsr(" OK");
+			break;
+		case APP_STATE_WAIT_FOR_ADATA:
+			*L_tmp_ptr = V.rx_data;
+			L_tmp_ptr++;
+			offset++;
+			if (offset >= sizeof(L_tmp)) {
+				L[position] = L_tmp;
+				V.comm_state = APP_STATE_INIT;
+				USART_putsr(" OK");
+			}
+			break;
+		default:
+			break;
+		}
 	}
 
 	return 0;
@@ -289,6 +331,7 @@ uint8_t init_rms_params(void)
 	V.comm = FALSE;
 	V.comm_state = 0;
 	V.line_num = 0;
+	V.comm_state = APP_STATE_INIT;
 
 	USART_putsr("Version ");
 	USART_putsr(versions);
