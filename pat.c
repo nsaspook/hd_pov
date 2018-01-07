@@ -224,7 +224,14 @@ int16_t sw_work(void)
 			switch (V.rx_data) {
 			case 'u':
 			case 'U':
-				V.comm_state = APP_STATE_WAIT_FOR_PDATA;
+				V.comm_state = APP_STATE_WAIT_FOR_UDATA;
+				itoa(str, sizeof(L_tmp), 10);
+				USART_putsr(" OK ");
+				USART_puts(str); // send size of data array
+				break;
+			case 'd':
+			case 'D':
+				V.comm_state = APP_STATE_WAIT_FOR_DDATA;
 				itoa(str, sizeof(L_tmp), 10);
 				USART_putsr(" OK ");
 				USART_puts(str); // send size of data array
@@ -234,13 +241,24 @@ int16_t sw_work(void)
 				break;
 			}
 			break;
-		case APP_STATE_WAIT_FOR_PDATA:
+		case APP_STATE_WAIT_FOR_DDATA:
+		case APP_STATE_WAIT_FOR_UDATA:
 			position = V.rx_data;
+			if (position >= strobe_max) {
+				USART_putsr(" NAK");
+				V.comm_state = APP_STATE_INIT;
+				break;
+			}
 			offset = 0;
-			V.comm_state = APP_STATE_WAIT_FOR_ADATA;
+			if (V.comm_state == APP_STATE_WAIT_FOR_UDATA)
+				V.comm_state = APP_STATE_WAIT_FOR_RDATA;
+			if (V.comm_state == APP_STATE_WAIT_FOR_DDATA) {
+				L_tmp_ptr = (void*)&L[position]; // set the array position
+				V.comm_state = APP_STATE_WAIT_FOR_SDATA;
+			}
 			USART_putsr(" OK");
 			break;
-		case APP_STATE_WAIT_FOR_ADATA:
+		case APP_STATE_WAIT_FOR_RDATA: // receive
 			*L_tmp_ptr = V.rx_data;
 			L_tmp_ptr++;
 			offset++;
@@ -249,8 +267,18 @@ int16_t sw_work(void)
 				V.comm_state = APP_STATE_INIT;
 				USART_putsr(" OK");
 			}
+		case APP_STATE_WAIT_FOR_SDATA: // send
+			USART_putc(*L_tmp_ptr);
+			L_tmp_ptr++;
+			offset++;
+			if (offset >= sizeof(L_tmp)) {
+				V.comm_state = APP_STATE_INIT;
+				USART_putsr(" OK");
+			}
 			break;
 		default:
+			USART_putsr(" NAK");
+			V.comm_state = APP_STATE_INIT;
 			break;
 		}
 	}
@@ -336,6 +364,9 @@ uint8_t init_rms_params(void)
 
 	USART_putsr("Version ");
 	USART_putsr(versions);
+	USART_putsr(", ");
+	itoa(str, sizeof(L[0]), 10);
+	USART_puts(str);
 	USART_putsr(", ");
 	USART_putsr(build_date);
 	USART_putsr(build_time);

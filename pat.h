@@ -22,8 +22,10 @@ typedef enum {
 	/* rs232 Application's state machine's initial state. */
 	APP_STATE_INIT = 0,
 
-	APP_STATE_WAIT_FOR_PDATA,
-	APP_STATE_WAIT_FOR_ADATA,
+	APP_STATE_WAIT_FOR_UDATA,
+	APP_STATE_WAIT_FOR_RDATA,
+	APP_STATE_WAIT_FOR_DDATA,
+	APP_STATE_WAIT_FOR_SDATA,
 
 	/* Application Error state*/
 	APP_STATE_ERROR
