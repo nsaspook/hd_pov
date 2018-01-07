@@ -205,7 +205,7 @@ int16_t sw_work(void)
 	ClrWdt(); // reset watchdog
 
 	if (!SW1) {
-		USART_putsr("Timer limit ");
+		USART_putsr("\r\nTimer limit ");
 		itoa(str, l_full, 10);
 		USART_puts(str);
 		USART_putsr("Timer value ");
@@ -226,18 +226,18 @@ int16_t sw_work(void)
 			case 'U':
 				V.comm_state = APP_STATE_WAIT_FOR_UDATA;
 				itoa(str, sizeof(L_tmp), 10);
-				USART_putsr(" OK ");
+				USART_putsr("\r\n OK");
 				USART_puts(str); // send size of data array
 				break;
 			case 'd':
 			case 'D':
 				V.comm_state = APP_STATE_WAIT_FOR_DDATA;
 				itoa(str, sizeof(L_tmp), 10);
-				USART_putsr(" OK ");
+				USART_putsr("\r\n OK");
 				USART_puts(str); // send size of data array
 				break;
 			default:
-				USART_putsr(" NAK");
+				USART_putsr("\r\n NAK");
 				break;
 			}
 			break;
@@ -253,7 +253,7 @@ int16_t sw_work(void)
 			if (V.comm_state == APP_STATE_WAIT_FOR_UDATA)
 				V.comm_state = APP_STATE_WAIT_FOR_RDATA;
 			if (V.comm_state == APP_STATE_WAIT_FOR_DDATA) {
-				L_tmp_ptr = (void*)&L[position]; // set the array position
+				L_tmp_ptr = (void*) &L[position]; // set the array position
 				V.comm_state = APP_STATE_WAIT_FOR_SDATA;
 			}
 			USART_putsr(" OK");
@@ -268,13 +268,17 @@ int16_t sw_work(void)
 				USART_putsr(" OK");
 			}
 		case APP_STATE_WAIT_FOR_SDATA: // send
-			USART_putc(*L_tmp_ptr);
-			L_tmp_ptr++;
-			offset++;
-			if (offset >= sizeof(L_tmp)) {
-				V.comm_state = APP_STATE_INIT;
-				USART_putsr(" OK");
-			}
+			do {
+				USART_putsr(" ,");
+				itoa(str,*L_tmp_ptr , 16);
+				USART_puts(str);
+				L_tmp_ptr++;
+				offset++;
+			} while (offset < sizeof(L_tmp));
+
+			V.comm_state = APP_STATE_INIT;
+			USART_putsr(" OK");
+
 			break;
 		default:
 			USART_putsr(" NAK");
@@ -362,13 +366,14 @@ uint8_t init_rms_params(void)
 	V.line_num = 0;
 	V.comm_state = APP_STATE_INIT;
 
-	USART_putsr("Version ");
+	USART_putsr("\r\nVersion ");
 	USART_putsr(versions);
 	USART_putsr(", ");
 	itoa(str, sizeof(L[0]), 10);
 	USART_puts(str);
 	USART_putsr(", ");
 	USART_putsr(build_date);
+	USART_putsr(", ");
 	USART_putsr(build_time);
 
 	L_ptr = &L[0];
