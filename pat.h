@@ -21,12 +21,10 @@ typedef signed long long int64_t;
 typedef enum {
 	/* rs232 Application's state machine's initial state. */
 	APP_STATE_INIT = 0,
-
 	APP_STATE_WAIT_FOR_UDATA,
 	APP_STATE_WAIT_FOR_RDATA,
 	APP_STATE_WAIT_FOR_DDATA,
 	APP_STATE_WAIT_FOR_SDATA,
-
 	/* Application Error state*/
 	APP_STATE_ERROR
 
@@ -56,8 +54,8 @@ typedef struct L_seq {
 
 /* data for one complete rotation*/
 typedef struct L_data {
-	uint16_t strobe;
 	struct L_seq sequence;
+	uint16_t strobe;
 } L_data;
 
 #define TRUE	1

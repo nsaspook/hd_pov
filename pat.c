@@ -250,16 +250,18 @@ int16_t sw_work(void)
 				break;
 			}
 			offset = 0;
-			if (V.comm_state == APP_STATE_WAIT_FOR_UDATA)
+			if (V.comm_state == APP_STATE_WAIT_FOR_UDATA) {
+				L_tmp_ptr = (void*) &L_tmp; // set to data buffer array
 				V.comm_state = APP_STATE_WAIT_FOR_RDATA;
+			}
 			if (V.comm_state == APP_STATE_WAIT_FOR_DDATA) {
-				L_tmp_ptr = (void*) &L[position]; // set the array position
+				L_tmp_ptr = (void*) &L[position]; // set to array position to read
 				V.comm_state = APP_STATE_WAIT_FOR_SDATA;
 			}
 			USART_putsr(" OK");
 			break;
 		case APP_STATE_WAIT_FOR_RDATA: // receive
-			*L_tmp_ptr = V.rx_data;
+			*L_tmp_ptr = (uint8_t) V.rx_data;
 			L_tmp_ptr++;
 			offset++;
 			if (offset >= sizeof(L_tmp)) {
@@ -267,10 +269,15 @@ int16_t sw_work(void)
 				V.comm_state = APP_STATE_INIT;
 				USART_putsr(" OK");
 			}
+			break;
 		case APP_STATE_WAIT_FOR_SDATA: // send
 			do {
 				USART_putsr(" ,");
-				itoa(str,*L_tmp_ptr , 16);
+				if (offset) {
+					itoa(str, *L_tmp_ptr, 16);
+				} else {
+					itoa(str, *L_tmp_ptr, 2);
+				}
 				USART_puts(str);
 				L_tmp_ptr++;
 				offset++;
