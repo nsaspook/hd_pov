@@ -199,8 +199,12 @@ void USART_putsr(const uint8_t *s)
 int16_t sw_work(void)
 {
 	static uint8_t position = 0, offset = 0;
-	static struct L_data L_tmp;
-	static uint8_t *L_tmp_ptr = (void*) &L_tmp;
+	static uint8_t *L_tmp_ptr;
+
+	static union L_union_type { // so we can access each byte of the struct
+		uint8_t L_bytes[sizeof(L[0]) + 1];
+		L_data L_tmp;
+	} L_union;
 
 	ClrWdt(); // reset watchdog
 
@@ -225,14 +229,14 @@ int16_t sw_work(void)
 			case 'u':
 			case 'U':
 				V.comm_state = APP_STATE_WAIT_FOR_UDATA;
-				itoa(str, sizeof(L_tmp), 10);
+				itoa(str, sizeof(L_union.L_tmp), 10);
 				USART_putsr("\r\n OK");
 				USART_puts(str); // send size of data array
 				break;
 			case 'd':
 			case 'D':
 				V.comm_state = APP_STATE_WAIT_FOR_DDATA;
-				itoa(str, sizeof(L_tmp), 10);
+				itoa(str, sizeof(L_union.L_tmp), 10);
 				USART_putsr("\r\n OK");
 				USART_puts(str); // send size of data array
 				break;
@@ -250,10 +254,8 @@ int16_t sw_work(void)
 				break;
 			}
 			offset = 0;
-			if (V.comm_state == APP_STATE_WAIT_FOR_UDATA) {
-				L_tmp_ptr = (void*) &L_tmp; // set to data buffer array
+			if (V.comm_state == APP_STATE_WAIT_FOR_UDATA)
 				V.comm_state = APP_STATE_WAIT_FOR_RDATA;
-			}
 			if (V.comm_state == APP_STATE_WAIT_FOR_DDATA) {
 				L_tmp_ptr = (void*) &L[position]; // set to array position to read
 				V.comm_state = APP_STATE_WAIT_FOR_SDATA;
@@ -261,11 +263,10 @@ int16_t sw_work(void)
 			USART_putsr(" OK");
 			break;
 		case APP_STATE_WAIT_FOR_RDATA: // receive
-			*L_tmp_ptr = (uint8_t) V.rx_data;
-			L_tmp_ptr++;
+			L_union.L_bytes[offset] = V.rx_data;
 			offset++;
-			if (offset >= sizeof(L_tmp)) {
-				L[position] = L_tmp;
+			if (offset >= sizeof(L_union.L_tmp)) {
+				L[position] = L_union.L_tmp;
 				V.comm_state = APP_STATE_INIT;
 				USART_putsr(" OK");
 			}
@@ -281,11 +282,9 @@ int16_t sw_work(void)
 				USART_puts(str);
 				L_tmp_ptr++;
 				offset++;
-			} while (offset < sizeof(L_tmp));
-
+			} while (offset < sizeof(L_union.L_tmp));
 			V.comm_state = APP_STATE_INIT;
 			USART_putsr(" OK");
-
 			break;
 		default:
 			USART_putsr(" NAK_C");
@@ -397,13 +396,15 @@ uint8_t init_rms_params(void)
 	L[2].strobe = 40000;
 	L[2].sequence.B = 1;
 	L[2].sequence.offset = strobe_around;
-	L[2].sequence.end = 1;
 
 	L[3].strobe = 30000;
 	L[3].sequence.R = 1;
 	L[3].sequence.G = 1;
 	L[3].sequence.B = 1;
 	L[3].sequence.offset = 0;
+	L[3].sequence.end = 1;
+
+	L[strobe_max - 1].sequence.end = 1;
 	return 0;
 }
 
