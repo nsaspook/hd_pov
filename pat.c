@@ -237,7 +237,7 @@ int16_t sw_work(void)
 				USART_puts(str); // send size of data array
 				break;
 			default:
-				USART_putsr("\r\n NAK");
+				USART_putsr("\r\n NAK_I");
 				break;
 			}
 			break;
@@ -245,7 +245,7 @@ int16_t sw_work(void)
 		case APP_STATE_WAIT_FOR_UDATA:
 			position = V.rx_data;
 			if (position >= strobe_max) {
-				USART_putsr(" NAK");
+				USART_putsr(" NAK_D");
 				V.comm_state = APP_STATE_INIT;
 				break;
 			}
@@ -274,9 +274,9 @@ int16_t sw_work(void)
 			do {
 				USART_putsr(" ,");
 				if (offset) {
-					itoa(str, *L_tmp_ptr, 16);
+					itoa(str, *L_tmp_ptr, 16); // show hex
 				} else {
-					itoa(str, *L_tmp_ptr, 2);
+					itoa(str, *L_tmp_ptr, 2); // show bits
 				}
 				USART_puts(str);
 				L_tmp_ptr++;
@@ -288,7 +288,7 @@ int16_t sw_work(void)
 
 			break;
 		default:
-			USART_putsr(" NAK");
+			USART_putsr(" NAK_C");
 			V.comm_state = APP_STATE_INIT;
 			break;
 		}
