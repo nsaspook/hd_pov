@@ -61,6 +61,7 @@
 #include <stdio.h>
 #include "pat.h"
 #include <string.h>
+#include "ringbufs.h"
 
 int16_t sw_work(void);
 void init_rmsmon(void);
@@ -73,6 +74,7 @@ uint16_t timer0_off = TIMEROFFSET, timer1_off = SAMPLEFREQ;
 near volatile struct L_data L[strobe_max] = {0};
 volatile uint8_t l_state = 2;
 volatile uint16_t l_full = strobe_limit_l, l_width = strobe_line, l_complete = strobe_complete;
+struct ringBufS_t ring_buf1;
 
 const uint8_t build_date[] = __DATE__, build_time[] = __TIME__;
 const uint8_t versions[] = "1.3";
@@ -161,6 +163,7 @@ void interrupt high_priority tm_handler(void) // timer/serial functions are hand
 			RCSTAbits.CREN = 0; // clear overrun
 			RCSTAbits.CREN = 1; // re-enable
 		}
+		ringBufS_put(&ring_buf1, V.rx_data);
 		V.comm = TRUE;
 	}
 
@@ -198,7 +201,7 @@ void USART_putsr(const uint8_t *s)
 /* main loop routine */
 int16_t sw_work(void)
 {
-	static uint8_t position = 0, offset = 0;
+	static uint8_t position = 0, offset = 0, rx_data;
 	static uint8_t *L_tmp_ptr;
 
 	static union L_union_type { // so we can access each byte of the struct
@@ -222,10 +225,12 @@ int16_t sw_work(void)
 
 	/* command state machine */
 	if (V.comm) {
-		V.comm = FALSE;
+		rx_data == ringBufS_get(&ring_buf1);
+		if (ringBufS_empty(&ring_buf1))
+			V.comm = FALSE;
 		switch (V.comm_state) {
 		case APP_STATE_INIT:
-			switch (V.rx_data) {
+			switch (rx_data) {
 			case 'u':
 			case 'U':
 				V.comm_state = APP_STATE_WAIT_FOR_UDATA;
@@ -247,7 +252,7 @@ int16_t sw_work(void)
 			break;
 		case APP_STATE_WAIT_FOR_DDATA:
 		case APP_STATE_WAIT_FOR_UDATA:
-			position = V.rx_data;
+			position = rx_data;
 			if (position >= strobe_max) {
 				USART_putsr(" NAK_D");
 				V.comm_state = APP_STATE_INIT;
@@ -263,7 +268,7 @@ int16_t sw_work(void)
 			USART_putsr(" OK");
 			break;
 		case APP_STATE_WAIT_FOR_RDATA: // receive
-			L_union.L_bytes[offset] = V.rx_data;
+			L_union.L_bytes[offset] = rx_data;
 			offset++;
 			if (offset >= sizeof(L_union.L_tmp)) {
 				L[position] = L_union.L_tmp;
@@ -289,6 +294,10 @@ int16_t sw_work(void)
 		default:
 			USART_putsr(" NAK_C");
 			V.comm_state = APP_STATE_INIT;
+			if (ringBufS_full(&ring_buf1)) {
+				ringBufS_flush(&ring_buf1, 0);
+				V.comm = FALSE;
+			}
 			break;
 		}
 	}
@@ -358,6 +367,7 @@ void init_rmsmon(void)
 	IPR1bits.RCIP = 1;
 
 	init_rms_params();
+	ringBufS_init(&ring_buf1);
 
 	/* Enable all high priority interrupts */
 	INTCONbits.GIEH = 1;
