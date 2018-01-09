@@ -54,6 +54,7 @@
  * 1.1 multi sequence support
  * 1.2 cleanup state machine and data logic
  * 1.3 add routines for remote configuration of strobes
+ * 1.4 add buffering for rs232
  */
 
 #include  <xc.h>
@@ -77,7 +78,7 @@ volatile uint16_t l_full = strobe_limit_l, l_width = strobe_line, l_complete = s
 struct ringBufS_t ring_buf1;
 
 const uint8_t build_date[] = __DATE__, build_time[] = __TIME__;
-const uint8_t versions[] = "1.3";
+const uint8_t versions[] = "1.4";
 
 void interrupt high_priority tm_handler(void) // timer/serial functions are handled here
 {
