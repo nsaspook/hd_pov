@@ -14,6 +14,15 @@ uint8_t modulo_inc(const uint8_t value, const uint8_t modulus)
 	return my_value;
 }
 
+uint8_t modulo_inc_r(const uint8_t value, const uint8_t modulus)
+{
+	uint8_t my_value = value + 1;
+	if (my_value >= modulus) {
+		my_value = 0;
+	}
+	return my_value;
+}
+
 void ringBufS_init(ringBufS_t *_this)
 {
 	/*****
@@ -54,7 +63,7 @@ void ringBufS_put(ringBufS_t *_this, const uint8_t c)
 {
 	if (_this->count < RBUF_SIZE) {
 		_this->buf[_this->head] = c;
-		_this->head = modulo_inc(_this->head, RBUF_SIZE);
+		_this->head = modulo_inc_r(_this->head, RBUF_SIZE);
 		++_this->count;
 	}
 }
