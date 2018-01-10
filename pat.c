@@ -352,7 +352,7 @@ void init_rmsmon(void)
 	TXSTAbits.SYNC = 0;
 	TXSTAbits.BRGH = 0;
 	BAUDCTLbits.BRG16 = 1;
-	SPBRG = 42; /* 57600 baud */
+	SPBRG = 129; /* 19200 baud */
 
 	/*      work int thread setup */
 	INTCONbits.TMR0IE = 1; // enable int

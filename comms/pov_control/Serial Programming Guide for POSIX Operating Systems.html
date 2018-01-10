@@ -1,0 +1,1440 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN" "http://www.w3.org/TR/REC-html40/loose.dtd">
+<!-- saved from url=(0044)https://www.cmrr.umn.edu/~strupp/serial.html -->
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>Serial Programming Guide for POSIX Operating Systems</title>
+<meta name="AUTHOR" content="Michael R. Sweet">
+<meta name="COPYRIGHT" content="Copyright 1994-1999, All Rights Reserved.">
+<meta name="DOCNUMBER" content="5th Edition">
+
+<style>
+BODY { font-family: serif; font-size: 11.0pt }
+H1 { font-family: sans-serif; font-size: 20.0pt }
+H2 { font-family: sans-serif; font-size: 20.0pt }
+H3 { font-family: sans-serif; font-size: 20.0pt }
+H4 { font-family: sans-serif; font-size: 20.0pt }
+H5 { font-family: sans-serif; font-size: 20.0pt }
+H6 { font-family: sans-serif; font-size: 20.0pt }
+SUB { font-size: 8.0pt }
+SUP { font-size: 8.0pt }
+PRE { font-size: 9.0pt }
+</style>
+</head>
+<body bgcolor="white" text="black">
+<center><a href="https://www.cmrr.umn.edu/~strupp/serial.html#CONTENTS"><img src="./Serial Programming Guide for POSIX Operating Systems_files/title.gif" border="0"><br>
+<h1>Serial Programming Guide for POSIX Operating Systems</h1></a><br>
+5th Edition<br>
+Michael R. Sweet<br>
+Copyright 1994-1999, All Rights Reserved.<br>
+</center>
+<hr>
+<h1 align="CENTER"><a name="CONTENTS">Table of Contents</a></h1>
+<br>
+<br><b><a href="https://www.cmrr.umn.edu/~strupp/serial.html#1">Introduction</a></b>
+<br>
+<br><b><a href="https://www.cmrr.umn.edu/~strupp/serial.html#basics">Chapter 1, Basics of Serial Communications</a></b>
+<ul>
+<li><a href="https://www.cmrr.umn.edu/~strupp/serial.html#2_1">What Are Serial Communications?</a></li>
+<li><a href="https://www.cmrr.umn.edu/~strupp/serial.html#2_2">What Is RS-232?</a></li>
+<ul>
+<li><a href="https://www.cmrr.umn.edu/~strupp/serial.html#2_2_1">Signal Definitions</a></li>
+</ul>
+<li><a href="https://www.cmrr.umn.edu/~strupp/serial.html#2_3">Asynchronous Communications</a></li>
+<ul>
+<li><a href="https://www.cmrr.umn.edu/~strupp/serial.html#2_3_1">What Are Full Duplex and Half Duplex?</a></li>
+<li><a href="https://www.cmrr.umn.edu/~strupp/serial.html#2_3_2">Flow Control</a></li>
+<li><a href="https://www.cmrr.umn.edu/~strupp/serial.html#2_3_3">What Is a Break?</a></li>
+</ul>
+<li><a href="https://www.cmrr.umn.edu/~strupp/serial.html#2_4">Synchronous Communications</a></li>
+<li><a href="https://www.cmrr.umn.edu/~strupp/serial.html#2_5">Accessing Serial Ports</a></li>
+<ul>
+<li><a href="https://www.cmrr.umn.edu/~strupp/serial.html#2_5_1">Serial Port Files</a></li>
+<li><a href="https://www.cmrr.umn.edu/~strupp/serial.html#2_5_2">Opening a Serial Port</a></li>
+<li><a href="https://www.cmrr.umn.edu/~strupp/serial.html#2_5_3">Writing Data to the Port</a></li>
+<li><a href="https://www.cmrr.umn.edu/~strupp/serial.html#2_5_4">Reading Data from the Port</a></li>
+<li><a href="https://www.cmrr.umn.edu/~strupp/serial.html#2_5_5">Closing a Serial Port</a></li>
+</ul>
+</ul>
+<b><a href="https://www.cmrr.umn.edu/~strupp/serial.html#config">Chapter 2, Configuring the Serial Port</a></b>
+<ul>
+<li><a href="https://www.cmrr.umn.edu/~strupp/serial.html#3_1">The POSIX Terminal Interface</a></li>
+<ul>
+<li><a href="https://www.cmrr.umn.edu/~strupp/serial.html#3_1_1">Control Options</a></li>
+<li><a href="https://www.cmrr.umn.edu/~strupp/serial.html#3_1_2">Local Options</a></li>
+<li><a href="https://www.cmrr.umn.edu/~strupp/serial.html#3_1_3">Input Options</a></li>
+<li><a href="https://www.cmrr.umn.edu/~strupp/serial.html#3_1_4">Output Options</a></li>
+<li><a href="https://www.cmrr.umn.edu/~strupp/serial.html#3_1_5">Control Characters</a></li>
+</ul>
+</ul>
+<b><a href="https://www.cmrr.umn.edu/~strupp/serial.html#modem">Chapter 3, MODEM Communications</a></b>
+<ul>
+<li><a href="https://www.cmrr.umn.edu/~strupp/serial.html#4_1">What Is a MODEM?</a></li>
+<li><a href="https://www.cmrr.umn.edu/~strupp/serial.html#4_2">Communicating With a MODEM</a></li>
+<ul>
+<li><a href="https://www.cmrr.umn.edu/~strupp/serial.html#4_2_1">Standard MODEM Commands</a></li>
+<li><a href="https://www.cmrr.umn.edu/~strupp/serial.html#4_2_2">Common MODEM Communication Problems</a></li>
+</ul>
+</ul>
+<b><a href="https://www.cmrr.umn.edu/~strupp/serial.html#advanced">Chapter 4, Advanced Serial Programming</a></b>
+<ul>
+<li><a href="https://www.cmrr.umn.edu/~strupp/serial.html#5_1">Serial Port IOCTLs</a></li>
+<ul>
+<li><a href="https://www.cmrr.umn.edu/~strupp/serial.html#5_1_1">Getting the Control Signals</a></li>
+<li><a href="https://www.cmrr.umn.edu/~strupp/serial.html#5_1_2">Setting the Control Signals</a></li>
+<li><a href="https://www.cmrr.umn.edu/~strupp/serial.html#5_1_3">Getting the Number of Bytes Available</a></li>
+</ul>
+<li><a href="https://www.cmrr.umn.edu/~strupp/serial.html#5_2">Selecting Input from a Serial Port</a></li>
+<ul>
+<li><a href="https://www.cmrr.umn.edu/~strupp/serial.html#5_2_1">The SELECT System Call</a></li>
+<li><a href="https://www.cmrr.umn.edu/~strupp/serial.html#5_2_2">Using the SELECT System Call</a></li>
+<li><a href="https://www.cmrr.umn.edu/~strupp/serial.html#5_2_3">Using SELECT with the X Intrinsics Library</a></li>
+</ul>
+</ul>
+<b><a href="https://www.cmrr.umn.edu/~strupp/serial.html#pinouts">Appendix A, Pinouts</a></b>
+<ul>
+<li><a href="https://www.cmrr.umn.edu/~strupp/serial.html#6_1">RS-232 Pinouts</a></li>
+<li><a href="https://www.cmrr.umn.edu/~strupp/serial.html#6_2">RS-422 Pinouts</a></li>
+<li><a href="https://www.cmrr.umn.edu/~strupp/serial.html#6_3">RS-574 (IBM PC/AT) Pinouts</a></li>
+<li><a href="https://www.cmrr.umn.edu/~strupp/serial.html#6_4">SGI Pinouts</a></li>
+</ul>
+<b><a href="https://www.cmrr.umn.edu/~strupp/serial.html#ascii">Appendix B, ASCII Control Codes</a></b>
+<ul>
+<li><a href="https://www.cmrr.umn.edu/~strupp/serial.html#7_1">Control Codes</a></li>
+</ul>
+<hr>
+<h1 align="RIGHT"><a name="1">Introduction</a></h1>
+<p>The Serial Programming Guide for POSIX Operating Systems will teach 
+you how to successfully, efficiently, and portably program the serial 
+ports on your UNIX® workstation or PC. Each chapter provides 
+programming examples that use the POSIX (Portable Standard for UNIX) 
+terminal control functions and should work with very few modifications 
+under IRIX®, HP-UX, SunOS®, Solaris®, Digital UNIX®, Linux®, and most 
+other UNIX operating systems. The biggest difference between operating 
+systems that you will find is the filenames used for serial port device 
+and lock files. </p>
+<p>This guide is organized into the following chapters and appendices: </p>
+<ul>
+<li><a href="https://www.cmrr.umn.edu/~strupp/serial.html#basics">Chapter 1, Basics of Serial Programming</a></li>
+<li><a href="https://www.cmrr.umn.edu/~strupp/serial.html#config">Chapter 2, Configuring the Serial Port</a></li>
+<li><a href="https://www.cmrr.umn.edu/~strupp/serial.html#modems">Chapter 3, Talking to MODEMs</a></li>
+<li><a href="https://www.cmrr.umn.edu/~strupp/serial.html#advanced">Chapter 4, Advanced Serial Programming</a></li>
+<li><a href="https://www.cmrr.umn.edu/~strupp/serial.html#pinouts">Appendix A, RS-232 Pinouts</a></li>
+<li><a href="https://www.cmrr.umn.edu/~strupp/serial.html#ascii">Appendix B, ASCII Control Codes</a></li>
+</ul>
+<hr>
+<h1 align="RIGHT"><a name="basics">Chapter 1, Basics of Serial 
+Communications</a></h1>
+<p>This chapter introduces serial communications, RS-232 and other 
+standards that are used on most computers as well as how to access a 
+serial port from a C program. </p>
+<h2><a name="2_1">What Are Serial Communications?</a></h2>
+<p>Computers transfer information (data) one or more bits at a time. 
+Serial refers to the transfer of data one bit at a time. Serial 
+communications include most network devices, keyboards, mice, MODEMs, 
+and terminals. </p>
+<p>When doing serial communications each word (i.e. byte or character) 
+of data you send or receive is sent one bit at a time. Each bit is 
+either <i>on</i> or <i>off.</i> The terms you'll hear sometimes are <i>
+mark</i> for the <i>on</i> state and <i>space</i> for the <i>off</i>
+ state. </p>
+<p>The speed of the serial data is most often expressed as 
+bits-per-second ("bps") or baudot rate ("baud"). This just represents 
+the number of ones and zeroes that can be sent in one second. Back at 
+the dawn of the computer age, 300 baud was considered fast, but today 
+computers can handle RS-232 speeds as high as 430,800 baud! When the 
+baud rate exceeds 1,000, you'll usually see the rate shown in <i>kilo</i>
+baud, or kbps (e.g. 9.6k, 19.2k, etc). For rates above 1,000,000 that 
+rate is shown in <i>mega</i>baud, or Mbps (e.g. 1.5Mbps). </p>
+<p>When referring to serial devices or ports, they are either labeled 
+as <i>Data Communications Equipment</i> ("DCE") or <i>Data Terminal 
+Equipment</i> ("DTE"). The difference between these is simple - every 
+signal pair, like transmit and receive, is swapped. When connecting two 
+DTE or two DCE interfaces together, a serial <i>null-MODEM</i> cable or 
+adapter is used that swaps the signal pairs. </p>
+<h2><a name="2_2">What Is RS-232?</a></h2>
+<p>RS-232 is a standard electrical interface for serial communications 
+defined by the <a href="http://www.eia.org/">Electronic Industries 
+Association ("EIA")</a>. RS-232 actually comes in 3 different flavors 
+(A, B, and C) with each one defining a different voltage range for the <i>
+on</i> and <i>off</i> levels. The most commonly used variety is 
+RS-232C, which defines a mark (on) bit as a voltage between -3V and 
+-12V and a space (off) bit as a voltage between +3V and +12V. The 
+RS-232C specification says these signals can go about 25 feet (8m) 
+before they become unusable. You can usually send signals a bit farther 
+than this as long as the baud is low enough. </p>
+<p>Besides wires for incoming and outgoing data, there are others that 
+provide timing, status, and handshaking: 
+</p><center>
+<table border="" width="80%"><caption align="CENTER">Table 1 - RS-232 Pin 
+Assignments</caption>
+<tbody><tr><th>Pin</th><th>Description</th><th>Pin</th><th>Description</th><th>
+Pin</th><th>Description</th><th>Pin</th><th>Description</th><th>Pin</th><th>
+Description</th></tr>
+<tr><td>1</td><td>Earth Ground</td><td>6</td><td><b>DSR</b> - Data Set 
+Ready</td><td>11</td><td>Unassigned</td><td>16</td><td>Secondary RXD</td><td>
+21</td><td>Signal Quality Detect</td></tr>
+<tr><td>2</td><td><b>TXD</b> - Transmitted Data</td><td>7</td><td><b>GND</b>
+ - Logic Ground</td><td>12</td><td>Secondary DCD</td><td>17</td><td>
+Receiver Clock</td><td>22</td><td>Ring Detect</td></tr>
+<tr><td>3</td><td><b>RXD</b> - Received Data</td><td>8</td><td><b>DCD</b>
+ - Data Carrier Detect</td><td>13</td><td>Secondary CTS</td><td>18</td><td>
+Unassigned</td><td>23</td><td>Data Rate Select</td></tr>
+<tr><td>4</td><td><b>RTS</b> - Request To Send</td><td>9</td><td>
+Reserved</td><td>14</td><td>Secondary TXD</td><td>19</td><td>Secondary 
+RTS</td><td>24</td><td>Transmit Clock</td></tr>
+<tr><td>5</td><td><b>CTS</b> - Clear To Send</td><td>10</td><td>Reserved</td><td>
+15</td><td>Transmit Clock</td><td>20</td><td><b>DTR</b> - Data Terminal 
+Ready</td><td>25</td><td>Unassigned</td></tr>
+</tbody></table>
+</center>
+<p></p>
+<p>Two standards for serial interfaces you may also see are RS-422 and 
+RS-574. RS-422 uses lower voltages and <i>differential</i> signals to 
+allow cable lengths up to about 1000ft (300m). RS-574 defines the 9-pin 
+PC serial connector and voltages. </p>
+<h3><a name="2_2_1">Signal Definitions</a></h3>
+<p>The RS-232 standard defines some 18 different signals for serial 
+communications. Of these, only six are generally available in the UNIX 
+environment. </p>
+<h4>GND - Logic Ground</h4>
+<p>Technically the logic ground is not a signal, but without it none of 
+the other signals will operate. Basically, the logic ground acts as a 
+reference voltage so that the electronics know which voltages are 
+positive or negative. </p>
+<h4>TXD - Transmitted Data</h4>
+<p>The TXD signal carries data transmitted from your workstation to the 
+computer or device on the other end (like a MODEM). A mark voltage is 
+interpreted as a value of 1, while a space voltage is interpreted as a 
+value of 0. </p>
+<h4>RXD - Received Data</h4>
+<p>The RXD signal carries data transmitted from the computer or device 
+on the other end to your workstation. Like TXD, mark and space voltages 
+are interpreted as 1 and 0, respectively. </p>
+<h4>DCD - Data Carrier Detect</h4>
+<p>The DCD signal is received from the computer or device on the other 
+end of your serial cable. A space voltage on this signal line indicates 
+that the computer or device is currently connected or on line. DCD is 
+not always used or available. </p>
+<h4>DTR - Data Terminal Ready</h4>
+<p>The DTR signal is generated by your workstation and tells the 
+computer or device on the other end that you are ready (a space 
+voltage) or not-ready (a mark voltage). DTR is usually enabled 
+automatically whenever you open the serial interface on the 
+workstation. </p>
+<h4>CTS - Clear To Send</h4>
+<p>The CTS signal is received from the other end of the serial cable. A 
+space voltage indicates that is alright to send more serial data from 
+your workstation. </p>
+<p>CTS is usually used to regulate the flow of serial data from your 
+workstation to the other end. </p>
+<h4>RTS - Request To Send</h4>
+<p>The RTS signal is set to the <i>space</i> voltage by your 
+workstation to indicate that more data is ready to be sent. </p>
+<p>Like CTS, RTS helps to regulate the flow of data between your 
+workstation and the computer or device on the other end of the serial 
+cable. Most workstations leave this signal set to the space voltage all 
+the time. </p>
+<h2><a name="2_3">Asynchronous Communications</a></h2>
+<p>For the computer to understand the serial data coming into it, it 
+needs some way to determine where one character ends and the next 
+begins. This guide deals exclusively with <i>asynchronous</i> serial 
+data. </p>
+<p>In asynchronous mode the serial data line stays in the mark (1) 
+state until a character is transmitted. A <i>start</i> bit preceeds 
+each character and is followed immediately by each bit in the 
+character, an optional parity bit, and one or more <i>stop</i> bits. 
+The start bit is always a space (0) and tells the computer that new 
+serial data is available. Data can be sent or received at any time, 
+thus the name asynchronous. 
+<!-- PAGE BREAK ---->
+</p>
+<p align="CENTER">Figure 1 - Asynchronous Data Transmission
+<br><img height="16%" src="./Serial Programming Guide for POSIX Operating Systems_files/async.gif" width="50%"></p>
+<p>The optional parity bit is a simple sum of the data bits indicating 
+whether or not the data contains an even or odd number of 1 bits. With <i>
+even parity</i>, the parity bit is 0 if there is an even number of 1's 
+in the character. With <i>odd parity</i>, the parity bit is 0 if there 
+is an odd number of 1's in the data. You may also hear the terms <i>
+space parity</i>, <i>mark parity</i>, and <i>no parity</i>. Space 
+parity means that the parity bit is always 0, while mark parity means 
+the bit is always 1. No parity means that no parity bit is present or 
+transmitted. </p>
+<p>The remaining bits are called stop bits. There can be 1, 1.5, or 2 
+stop bits between characters and they always have a value of 1. Stop 
+bits traditionally were used to give the computer time to process the 
+previous character, but now only serve to synchronize the receiving 
+computer to the incoming characters. </p>
+<p>Asynchronous data formats are usually expressed as "8N1", "7E1", and 
+so forth. These stand for "8 data bits, no parity, 1 stop bit" and "7 
+data bits, even parity, 1 stop bit" respectively. </p>
+<h3><a name="2_3_1">What Are Full Duplex and Half Duplex?</a></h3>
+<p><i>Full duplex</i> means that the computer can send and receive data 
+simultaneously - there are two separate data channels (one coming in, 
+one going out). </p>
+<p><i>Half duplex</i> means that the computer cannot send or receive 
+data at the same time. Usually this means there is only a single data 
+channel to talk over. This does not mean that any of the RS-232 signals 
+are not used. Rather, it usually means that the communications link 
+uses some standard other than RS-232 that does not support full duplex 
+operation. </p>
+<h3><a name="2_3_2">Flow Control</a></h3>
+<p>It is often necessary to regulate the flow of data when transferring 
+data between two serial interfaces. This can be due to limitations in 
+an intermediate serial communications link, one of the serial 
+interfaces, or some storage media. Two methods are commonly used for 
+asynchronous data. </p>
+<p>The first method is often called "software" flow control and uses 
+special characters to start (XON or DC1, 021 octal) or stop (XOFF or 
+DC3, 023 octal) the flow of data. These characters are defined in the <a href="https://www.cmrr.umn.edu/~strupp/serial.html#ascii">
+American Standard Code for Information Interchange ("ASCII")</a>. While 
+these codes are useful when transferring textual information, they 
+cannot be used when transferring other types of information without 
+special programming. </p>
+<p>The second method is called "hardware" flow control and uses the 
+RS-232 CTS and RTS signals instead of special characters. The receiver 
+sets CTS to the space voltage when it is ready to receive more data and 
+to the mark voltage when it is not ready. Likewise, the sender sets RTS 
+to the space voltage when it is ready to send more data. Because 
+hardware flow control uses a separate set of signals, it is much faster 
+than software flow control which needs to send or receive multiple bits 
+of information to do the same thing. CTS/RTS flow control is not 
+supported by all hardware or operating systems. </p>
+<h3><a name="2_3_3">What Is a Break?</a></h3>
+<p>Normally a receive or transmit data signal stays at the mark voltage 
+until a new character is transferred. If the signal is dropped to the 
+space voltage for a long period of time, usually 1/4 to 1/2 second, 
+then a break condition is said to exist. </p>
+<p>A break is sometimes used to reset a communications line or change 
+the operating mode of communications hardware like a MODEM. <a href="https://www.cmrr.umn.edu/~strupp/serial.html#modem">
+Chapter 3, Talking to MODEMs</a> covers these applications in more 
+depth. </p>
+<h2><a name="2_4">Synchronous Communications</a></h2>
+<p>Unlike asynchronous data, synchronous data appears as a constant 
+stream of bits. To read the data on the line, the computer must provide 
+or receive a common bit clock so that both the sender and receiver are 
+synchronized. </p>
+<p>Even with this synchronization, the computer must mark the beginning 
+of the data somehow. The most common way of doing this is to use a data 
+packet protocol like Serial Data Link Control ("SDLC") or High-Speed 
+Data Link Control ("HDLC"). </p>
+<p>Each protocol defines certain bit sequences to represent the 
+beginning and end of a data packet. Each also defines a bit sequence 
+that is used when there is no data. These bit sequences allow the 
+computer see the beginning of a data packet. </p>
+<p>Because synchronous protocols do not use per-character 
+synchronization bits they typically provide at least a 25% improvement 
+in performance over asynchronous communications and are suitable for 
+remote networking and configurations with more than two serial 
+interfaces. </p>
+<p>Despite the speed advantages of synchronous communications, most 
+RS-232 hardware does not support it due to the extra hardware and 
+software required. </p>
+<h2><a name="2_5">Accessing Serial Ports</a></h2>
+<p>Like all devices, UNIX provides access to serial ports via <i>device 
+files</i>. To access a serial port you simply open the corresponding 
+device file. </p>
+<h3><a name="2_5_1">Serial Port Files</a></h3>
+<p>Each serial port on a UNIX system has one or more device files 
+(files in the <tt>/dev</tt> directory) associated with it: 
+</p><center>
+<table border="1"><caption align="CENTER">Table 2 - Serial Port Device 
+Files</caption>
+<tbody><tr><th>System</th><th>Port 1</th><th>Port 2</th></tr>
+<tr><td>IRIX®</td><td>/dev/ttyf1</td><td>/dev/ttyf2</td></tr>
+<tr><td>HP-UX</td><td>/dev/tty1p0</td><td>/dev/tty2p0</td></tr>
+<tr><td>Solaris®/SunOS®</td><td>/dev/ttya</td><td>/dev/ttyb</td></tr>
+<tr><td>Linux®</td><td>/dev/ttyS0</td><td>/dev/ttyS1</td></tr>
+<tr><td>Digital UNIX®</td><td>/dev/tty01</td><td>/dev/tty02</td></tr>
+</tbody></table>
+</center>
+<p></p>
+<h3><a name="2_5_2">Opening a Serial Port</a></h3>
+<p>Since a serial port is a file, the <i>open(2)</i> function is used 
+to access it. The one hitch with UNIX is that device files are usually 
+not accessable by normal users. Workarounds include changing the access 
+permissions to the file(s) in question, running your program as the 
+super-user (root), or making your program set-userid so that it runs as 
+the owner of the device file. </p>
+<p>For now we'll assume that the file is accessable by all users. The 
+code to open serial port 1 on an <code>sgi</code>® workstation running 
+IRIX is: </p>
+<ul>
+<p>Listing 1 - Opening a serial port. </p>
+<pre>#include &lt;stdio.h&gt;   /* Standard input/output definitions */
+#include &lt;string.h&gt;  /* String function definitions */
+#include &lt;unistd.h&gt;  /* UNIX standard function definitions */
+#include &lt;fcntl.h&gt;   /* File control definitions */
+#include &lt;errno.h&gt;   /* Error number definitions */
+#include &lt;termios.h&gt; /* POSIX terminal control definitions */
+
+/*
+ * 'open_port()' - Open serial port 1.
+ *
+ * Returns the file descriptor on success or -1 on error.
+ */
+
+int
+open_port(void)
+{
+  int fd; /* File descriptor for the port */
+
+
+  fd = open("/dev/ttyf1", O_RDWR | O_NOCTTY | O_NDELAY);
+  if (fd == -1)
+  {
+   /*
+    * Could not open the port.
+    */
+
+    perror("open_port: Unable to open /dev/ttyf1 - ");
+  }
+  else
+    fcntl(fd, F_SETFL, 0);
+
+  return (fd);
+}
+</pre>
+</ul>
+<p>Other systems would require the corresponding device file name, but 
+otherwise the code is the same. </p>
+<h4>Open Options</h4>
+<p>You'll notice that when we opened the device file we used two other 
+flags along with the read+write mode: </p>
+<ul>
+<pre>fd = open("/dev/ttyf1", O_RDWR | O_NOCTTY | O_NDELAY);
+</pre>
+</ul>
+<p>The <i>O_NOCTTY</i> flag tells UNIX that this program doesn't want 
+to be the "controlling terminal" for that port. If you don't specify 
+this then any input (such as keyboard abort signals and so forth) will 
+affect your process. Programs like <i>getty(1M/8)</i> use this feature 
+when starting the login process, but normally a user program does not 
+want this behavior. </p>
+<p>The <i>O_NDELAY</i> flag tells UNIX that this program doesn't care 
+what state the DCD signal line is in - whether the other end of the 
+port is up and running. If you do not specify this flag, your process 
+will be put to sleep until the DCD signal line is the space voltage. </p>
+<h3><a name="2_5_3">Writing Data to the Port</a></h3>
+<p>Writing data to the port is easy - just use the <i>write(2)</i>
+ system call to send data it: </p>
+<ul>
+<pre>n = write(fd, "ATZ\r", 4);
+if (n &lt; 0)
+  fputs("write() of 4 bytes failed!\n", stderr);
+</pre>
+</ul>
+<p>The <i>write</i> function returns the number of bytes sent or -1 if 
+an error occurred. Usually the only error you'll run into is <i>EIO</i>
+ when a MODEM or data link drops the Data Carrier Detect (DCD) line. 
+This condition will persist until you close the port. </p>
+<h3><a name="2_5_4">Reading Data from the Port</a></h3>
+<p>Reading data from a port is a little trickier. When you operate the 
+port in raw data mode, each <i>read(2)</i> system call will return 
+however many characters are actually available in the serial input 
+buffers. If no characters are available, the call will block (wait) 
+until characters come in, an interval timer expires, or an error 
+occurs. The <i>read</i> function can be made to return immediately by 
+doing the following: </p>
+<ul>
+<pre>fcntl(fd, F_SETFL, FNDELAY);
+</pre>
+</ul>
+<p>The <i>FNDELAY</i> option causes the <i>read</i> function to return 
+0 if no characters are available on the port. To restore normal 
+(blocking) behavior, call <i>fcntl()</i> without the <i>FNDELAY</i>
+ option: </p>
+<ul>
+<pre>fcntl(fd, F_SETFL, 0);
+</pre>
+</ul>
+<p>This is also used after opening a serial port with the O_NDELAY 
+option. </p>
+<h3><a name="2_5_5">Closing a Serial Port</a></h3>
+<p>To close the serial port, just use the <i>close</i> system call: </p>
+<ul>
+<pre>close(fd);
+</pre>
+</ul>
+<p>Closing a serial port will also usually set the DTR signal low which 
+causes most MODEMs to hang up. </p>
+<hr>
+<h1 align="RIGHT"><a name="config">Chapter 2, Configuring the Serial 
+Port</a></h1>
+<p>This chapter discusses how to configure a serial port from C using 
+the POSIX termios interface. </p>
+<h2><a name="3_1">The POSIX Terminal Interface</a></h2>
+<p>Most systems support the POSIX terminal (serial) interface for 
+changing parameters such as baud rate, character size, and so on. The 
+first thing you need to do is include the file <tt>&lt;termios.h&gt;</tt>; 
+this defines the terminal control structure as well as the POSIX 
+control functions. </p>
+<p>The two most important POSIX functions are <i>tcgetattr(3)</i> and <i>
+tcsetattr(3)</i>. These get and set terminal attributes, respectively; 
+you provide a pointer to a <i>termios</i> structure that contains all 
+of the serial options available: 
+</p><center>
+<table border="1" width="50%"><caption align="CENTER">Table 3 - Termios 
+Structure Members</caption>
+<tbody><tr><th>Member</th><th>Description</th></tr>
+<tr><td>c_cflag</td><td>Control options</td></tr>
+<tr><td>c_lflag</td><td>Line options</td></tr>
+<tr><td>c_iflag</td><td>Input options</td></tr>
+<tr><td>c_oflag</td><td>Output options</td></tr>
+<tr><td>c_cc</td><td>Control characters</td></tr>
+<tr><td>c_ispeed</td><td>Input baud (new interface)</td></tr>
+<tr><td>c_ospeed</td><td>Output baud (new interface)</td></tr>
+</tbody></table>
+</center>
+<p></p>
+<h3><a name="3_1_1">Control Options</a></h3>
+ The <i>c_cflag</i> member controls the baud rate, number of data bits, 
+parity, stop bits, and hardware flow control. There are constants for 
+all of the supported configurations. 
+<center>
+<table border="1" width="50%"><caption align="CENTER">Table 4 - 
+Constants for the c_cflag Member</caption>
+<tbody><tr><th>Constant</th><th>Description</th></tr>
+<tr><td>CBAUD</td><td>Bit mask for baud rate</td></tr>
+<tr><td>B0</td><td>0 baud (drop DTR)</td></tr>
+<tr><td>B50</td><td>50 baud</td></tr>
+<tr><td>B75</td><td>75 baud</td></tr>
+<tr><td>B110</td><td>110 baud</td></tr>
+<tr><td>B134</td><td>134.5 baud</td></tr>
+<tr><td>B150</td><td>150 baud</td></tr>
+<tr><td>B200</td><td>200 baud</td></tr>
+<tr><td>B300</td><td>300 baud</td></tr>
+<tr><td>B600</td><td>600 baud</td></tr>
+<tr><td>B1200</td><td>1200 baud</td></tr>
+<tr><td>B1800</td><td>1800 baud</td></tr>
+<tr><td>B2400</td><td>2400 baud</td></tr>
+<tr><td>B4800</td><td>4800 baud</td></tr>
+<tr><td>B9600</td><td>9600 baud</td></tr>
+<tr><td>B19200</td><td>19200 baud</td></tr>
+<tr><td>B38400</td><td>38400 baud</td></tr>
+<tr><td>B57600</td><td>57,600 baud</td></tr>
+<tr><td>B76800</td><td>76,800 baud</td></tr>
+<tr><td>B115200</td><td>115,200 baud</td></tr>
+<tr><td>EXTA</td><td>External rate clock</td></tr>
+<tr><td>EXTB</td><td>External rate clock</td></tr>
+<tr><td>CSIZE</td><td>Bit mask for data bits</td></tr>
+<tr><td>CS5</td><td>5 data bits</td></tr>
+<tr><td>CS6</td><td>6 data bits</td></tr>
+<tr><td>CS7</td><td>7 data bits</td></tr>
+<tr><td>CS8</td><td>8 data bits</td></tr>
+<tr><td>CSTOPB</td><td>2 stop bits (1 otherwise)</td></tr>
+<tr><td>CREAD</td><td>Enable receiver</td></tr>
+<tr><td>PARENB</td><td>Enable parity bit</td></tr>
+<tr><td>PARODD</td><td>Use odd parity instead of even</td></tr>
+<tr><td>HUPCL</td><td>Hangup (drop DTR) on last close</td></tr>
+<tr><td>CLOCAL</td><td>Local line - do not change "owner" of port</td></tr>
+<tr><td>LOBLK</td><td>Block job control output</td></tr>
+<tr><td>CNEW_RTSCTS 
+<br>CRTSCTS</td><td>Enable hardware flow control (not supported  on all 
+platforms)</td></tr>
+</tbody></table>
+</center>
+<p>The <i>c_cflag</i> member contains two options that should always be 
+enabled, <i>CLOCAL</i> and <i>CREAD</i>. These will ensure that your 
+program does not become the 'owner' of the port subject to sporatic job 
+control and hangup signals, and also that the serial interface driver 
+will read incoming data bytes. </p>
+<p>The baud rate constants (<i>CBAUD</i>, <i>B9600</i>, etc.) are used 
+for older interfaces that lack the <i>c_ispeed</i> and <i>c_ospeed</i>
+ members. See the next section for information on the POSIX functions 
+used to set the baud rate. </p>
+<p><b>Never</b> initialize the <i>c_cflag</i> (or any other flag) 
+member directly; you should always use the bitwise AND, OR, and NOT 
+operators to set or clear bits in the members.  Different operating 
+system versions (and even patches) can and do use the bits differently, 
+so using the bitwise operators will prevent you from clobbering a bit 
+flag that is needed in a newer serial driver. </p>
+<h4>Setting the Baud Rate</h4>
+<p>The baud rate is stored in different places depending on the 
+operating system. Older interfaces store the baud rate in the <i>c_cflag</i>
+ member using one of the baud rate constants in table 4, while newer 
+implementations provide the <i>c_ispeed</i> and <i>c_ospeed</i> members 
+that contain the actual baud rate value. </p>
+<p>The <i>cfsetospeed(3)</i> and <i>cfsetispeed(3)</i> functions are 
+provided to set the baud rate in the <i>termios</i> structure 
+regardless of the underlying operating system interface. Typically 
+you'd use the following code to set the baud rate: </p>
+<ul>
+<p>Listing 2 - Setting the baud rate. </p>
+<pre>struct termios options;
+
+/*
+ * Get the current options for the port...
+ */
+
+tcgetattr(fd, &amp;options);
+
+/*
+ * Set the baud rates to 19200...
+ */
+
+cfsetispeed(&amp;options, B19200);
+cfsetospeed(&amp;options, B19200);
+
+/*
+ * Enable the receiver and set local mode...
+ */
+
+options.c_cflag |= (CLOCAL | CREAD);
+
+/*
+ * Set the new options for the port...
+ */
+
+tcsetattr(fd, TCSANOW, &amp;options);
+</pre>
+</ul>
+<p>The <i>tcgetattr(3)</i> function fills the termios structure you 
+provide with the current serial port configuration. After we set the 
+baud rates and enable local mode and serial data receipt, we select the 
+new configuration using <i>tcsetattr(3)</i>. The <i>TCSANOW</i>
+ constant specifies that all changes should occur immediately without 
+waiting for output data to finish sending or input data to finish 
+receiving. There are other constants to wait for input and output to 
+finish or to flush the input and output buffers. </p>
+<p>Most systems do not support different input and output speeds, so be 
+sure to set both to the same value for maximum portability. 
+</p><center>
+<table border="1" width="50%"><caption align="CENTER">Table 5 - 
+Constants for tcsetattr</caption>
+<tbody><tr><th>Constant</th><th>Description</th></tr>
+<tr><td>TCSANOW</td><td>Make changes now without waiting for data to 
+complete</td></tr>
+<tr><td>TCSADRAIN</td><td>Wait until everything has been transmitted</td>
+</tr>
+<tr><td>TCSAFLUSH</td><td>Flush input and output buffers and make the 
+change</td></tr>
+</tbody></table>
+</center>
+<p></p>
+<h4>Setting the Character Size</h4>
+<p>Unlike the baud rate, there is no convienience function to set the 
+character size. Instead you must do a little bitmasking to set things 
+up. The character size is specified in bits: </p>
+<ul>
+<pre>options.c_cflag &amp;= ~CSIZE; /* Mask the character size bits */
+options.c_cflag |= CS8;    /* Select 8 data bits */
+</pre>
+</ul>
+<h4>Setting Parity Checking</h4>
+<p>Like the character size you must manually set the parity enable and 
+parity type bits. UNIX serial drivers support even, odd, and no parity 
+bit generation. Space parity can be simulated with clever coding. </p>
+<ul>
+<li>No parity (8N1):</li>
+<pre>options.c_cflag &amp;= ~PARENB
+options.c_cflag &amp;= ~CSTOPB
+options.c_cflag &amp;= ~CSIZE;
+options.c_cflag |= CS8;
+</pre>
+<li>Even parity (7E1):</li>
+<pre>options.c_cflag |= PARENB
+options.c_cflag &amp;= ~PARODD
+options.c_cflag &amp;= ~CSTOPB
+options.c_cflag &amp;= ~CSIZE;
+options.c_cflag |= CS7;
+</pre>
+<li>Odd parity (7O1):</li>
+<pre>options.c_cflag |= PARENB
+options.c_cflag |= PARODD
+options.c_cflag &amp;= ~CSTOPB
+options.c_cflag &amp;= ~CSIZE;
+options.c_cflag |= CS7;
+</pre>
+<li>Space parity is setup the same as no parity (7S1):</li>
+<pre>options.c_cflag &amp;= ~PARENB
+options.c_cflag &amp;= ~CSTOPB
+options.c_cflag &amp;= ~CSIZE;
+options.c_cflag |= CS8;
+</pre>
+</ul>
+<h4>Setting Hardware Flow Control</h4>
+<p>Some versions of UNIX support hardware flow control using the CTS 
+(Clear To Send) and RTS (Request To Send) signal lines. If the <i>
+CNEW_RTSCTS</i> or <i>CRTSCTS</i> constants are defined on your system 
+then hardware flow control is probably supported. Do the following to 
+enable hardware flow control: </p>
+<ul>
+<pre>options.c_cflag |= CNEW_RTSCTS;    /* Also called CRTSCTS */
+</pre>
+</ul>
+<p>Similarly, to disable hardware flow control: </p>
+<ul>
+<pre>options.c_cflag &amp;= ~CNEW_RTSCTS;
+</pre>
+</ul>
+<h3><a name="3_1_2">Local Options</a></h3>
+<p>The local modes member <i>c_lflag</i> controls how input characters 
+are managed by the serial driver. In general you will configure the <i>
+c_lflag</i> member for <i>canonical</i> or <i>raw</i> input. 
+</p><center>
+<table border="1" width="50%"><caption align="CENTER">Table 6 - 
+Constants for the c_lflag Member</caption>
+<tbody><tr><th>Constant</th><th>Description</th></tr>
+<tr><td>ISIG</td><td>Enable SIGINTR, SIGSUSP, SIGDSUSP, and SIGQUIT 
+signals</td></tr>
+<tr><td>ICANON</td><td>Enable canonical input (else raw)</td></tr>
+<tr><td>XCASE</td><td>Map uppercase \lowercase (obsolete)</td></tr>
+<tr><td>ECHO</td><td>Enable echoing of input characters</td></tr>
+<tr><td>ECHOE</td><td>Echo erase character as BS-SP-BS</td></tr>
+<tr><td>ECHOK</td><td>Echo NL after kill character</td></tr>
+<tr><td>ECHONL</td><td>Echo NL</td></tr>
+<tr><td>NOFLSH</td><td>Disable flushing of input buffers after 
+interrupt or quit characters</td></tr>
+<tr><td>IEXTEN</td><td>Enable extended functions</td></tr>
+<tr><td>ECHOCTL</td><td>Echo control characters as ^char and delete as 
+~?</td></tr>
+<tr><td>ECHOPRT</td><td>Echo erased character as character erased</td></tr>
+<tr><td>ECHOKE</td><td>BS-SP-BS entire line on line kill</td></tr>
+<tr><td>FLUSHO</td><td>Output being flushed</td></tr>
+<tr><td>PENDIN</td><td>Retype pending input at next read or input char</td>
+</tr>
+<tr><td>TOSTOP</td><td>Send SIGTTOU for background output</td></tr>
+</tbody></table>
+</center>
+<p></p>
+<h4>Choosing Canonical Input</h4>
+<p>Canonical input is line-oriented. Input characters are put into a 
+buffer which can be edited interactively by the user until a CR 
+(carriage return) or LF (line feed) character is received. </p>
+<p>When selecting this mode you normally select the <i>ICANON</i>, <i>
+ECHO</i>, and <i>ECHOE</i> options: </p>
+<ul>
+<pre>options.c_lflag |= (ICANON | ECHO | ECHOE);
+</pre>
+</ul>
+<h4>Choosing Raw Input</h4>
+<p>Raw input is unprocessed. Input characters are passed through 
+exactly as they are received, when they are received. Generally you'll 
+deselect the <i>ICANON</i>, <i>ECHO</i>, <i>ECHOE</i>, and <i>ISIG</i>
+ options when using raw input: </p>
+<ul>
+<pre>options.c_lflag &amp;= ~(ICANON | ECHO | ECHOE | ISIG);
+</pre>
+</ul>
+<h4>A Note About Input Echo</h4>
+<p><b>Never</b> enable input echo (<i>ECHO, ECHOE</i>) when sending 
+commands to a MODEM or other computer that is echoing characters, as 
+you will generate a feedback loop between the two serial interfaces! </p>
+<h3><a name="3_1_3">Input Options</a></h3>
+<p>The input modes member <i>c_iflag</i> controls any input processing 
+that is done to characters received on the port. Like the <i>c_cflag</i>
+ field, the final value stored in <i>c_iflag</i> is the bitwise OR of 
+the desired options. 
+</p><center>
+<table border="1" width="50%"><caption align="CENTER">Table 7 - 
+Constants for the c_iflag Member</caption>
+<tbody><tr><th>Constant</th><th>Description</th></tr>
+<tr><td>INPCK</td><td>Enable parity check</td></tr>
+<tr><td>IGNPAR</td><td>Ignore parity errors</td></tr>
+<tr><td>PARMRK</td><td>Mark parity errors</td></tr>
+<tr><td>ISTRIP</td><td>Strip parity bits</td></tr>
+<tr><td>IXON</td><td>Enable software flow control (outgoing)</td></tr>
+<tr><td>IXOFF</td><td>Enable software flow control (incoming)</td></tr>
+<tr><td>IXANY</td><td>Allow any character to start flow again</td></tr>
+<tr><td>IGNBRK</td><td>Ignore break condition</td></tr>
+<tr><td>BRKINT</td><td>Send a SIGINT when a break condition is detected</td>
+</tr>
+<tr><td>INLCR</td><td>Map NL to CR</td></tr>
+<tr><td>IGNCR</td><td>Ignore CR</td></tr>
+<tr><td>ICRNL</td><td>Map CR to NL</td></tr>
+<tr><td>IUCLC</td><td>Map uppercase to lowercase</td></tr>
+<tr><td>IMAXBEL</td><td>Echo BEL on input line too long</td></tr>
+</tbody></table>
+</center>
+<p></p>
+<h4>Setting Input Parity Options</h4>
+<p>You should enable input parity checking when you have enabled parity 
+in the <i>c_cflag</i> member (<i>PARENB</i>). The revelant constants 
+for input parity checking are <i>INPCK</i>, <i>IGNPAR</i>, <i>PARMRK</i>
+, and <i>ISTRIP</i>. Generally you will select <i>INPCK</i> and <i>
+ISTRIP </i>to enable checking and stripping of the parity bit: </p>
+<ul>
+<pre>options.c_iflag |= (INPCK | ISTRIP);
+</pre>
+</ul>
+<p><i>IGNPAR</i> is a somewhat dangerous option that tells the serial 
+driver to ignore parity errors and pass the incoming data through as if 
+no errors had occurred. This can be useful for testing the quality of a 
+communications link, but in general is not used for practical reasons. </p>
+<p><i>PARMRK</i> causes parity errors to be 'marked' in the input 
+stream using special characters. If <i>IGNPAR</i> is enabled, a NUL 
+character (000 octal) is sent to your program before every character 
+with a parity error. Otherwise, a DEL (177 octal) and NUL character is 
+sent along with the bad character. </p>
+<h4>Setting Software Flow Control</h4>
+<p>Software flow control is enabled using the <i>IXON</i>, <i>IXOFF</i>
+, and <i>IXANY</i> constants: </p>
+<ul>
+<pre>options.c_iflag |= (IXON | IXOFF | IXANY);
+</pre>
+</ul>
+<p>To disable software flow control simply mask those bits: </p>
+<ul>
+<pre>options.c_iflag &amp;= ~(IXON | IXOFF | IXANY);
+</pre>
+</ul>
+<p>The XON (start data) and XOFF (stop data) characters are defined in 
+the <i>c_cc</i> array described below. </p>
+<h3><a name="3_1_4">Output Options</a></h3>
+<p>The <i>c_oflag</i> member contains output filtering options. Like 
+the input modes, you can select processed or raw data output. 
+</p><center>
+<table border="1" width="50%"><caption align="CENTER">Table 8 - 
+Constants for the c_oflag Member</caption>
+<tbody><tr><th>Constant</th><th>Description</th></tr>
+<tr><td>OPOST</td><td>Postprocess output (not set = raw output)</td></tr>
+<tr><td>OLCUC</td><td>Map lowercase to uppercase</td></tr>
+<tr><td>ONLCR</td><td>Map NL to CR-NL</td></tr>
+<tr><td>OCRNL</td><td>Map CR to NL</td></tr>
+<tr><td>NOCR</td><td>No CR output at column 0</td></tr>
+<tr><td>ONLRET</td><td>NL performs CR function</td></tr>
+<tr><td>OFILL</td><td>Use fill characters for delay</td></tr>
+<tr><td>OFDEL</td><td>Fill character is DEL</td></tr>
+<tr><td>NLDLY</td><td>Mask for delay time needed between lines</td></tr>
+<tr><td>NL0</td><td>No delay for NLs</td></tr>
+<tr><td>NL1</td><td>Delay further output after newline for 100 
+milliseconds</td></tr>
+<tr><td>CRDLY</td><td>Mask for delay time needed to return carriage to 
+left column</td></tr>
+<tr><td>CR0</td><td>No delay for CRs</td></tr>
+<tr><td>CR1</td><td>Delay after CRs depending on current column position</td>
+</tr>
+<tr><td>CR2</td><td>Delay 100 milliseconds after sending CRs</td></tr>
+<tr><td>CR3</td><td>Delay 150 milliseconds after sending CRs</td></tr>
+<tr><td>TABDLY</td><td>Mask for delay time needed after TABs</td></tr>
+<tr><td>TAB0</td><td>No delay for TABs</td></tr>
+<tr><td>TAB1</td><td>Delay after TABs depending on current column 
+position</td></tr>
+<tr><td>TAB2</td><td>Delay 100 milliseconds after sending TABs</td></tr>
+<tr><td>TAB3</td><td>Expand TAB characters to spaces</td></tr>
+<tr><td>BSDLY</td><td>Mask for delay time needed after BSs</td></tr>
+<tr><td>BS0</td><td>No delay for BSs</td></tr>
+<tr><td>BS1</td><td>Delay 50 milliseconds after sending BSs</td></tr>
+<tr><td>VTDLY</td><td>Mask for delay time needed after VTs</td></tr>
+<tr><td>VT0</td><td>No delay for VTs</td></tr>
+<tr><td>VT1</td><td>Delay 2 seconds after sending VTs</td></tr>
+<tr><td>FFDLY</td><td>Mask for delay time needed after FFs</td></tr>
+<tr><td>FF0</td><td>No delay for FFs</td></tr>
+<tr><td>FF1</td><td>Delay 2 seconds after sending FFs</td></tr>
+</tbody></table>
+</center>
+<p></p>
+<h4>Choosing Processed Output</h4>
+<p>Processed output is selected by setting the <i>OPOST</i> option in 
+the <i>c_oflag</i> member: </p>
+<ul>
+<pre>options.c_oflag |= OPOST;
+</pre>
+</ul>
+<p>Of all the different options, you will only probably use the <i>ONLCR</i>
+ option which maps newlines into CR-LF pairs. The rest of the output 
+options are primarily historic and date back to the time when line 
+printers and terminals could not keep up with the serial data stream! </p>
+<h4>Choosing Raw Output</h4>
+<p>Raw output is selected by resetting the <i>OPOST</i> option in the <i>
+c_oflag</i> member: </p>
+<ul>
+<pre>options.c_oflag &amp;= ~OPOST;
+</pre>
+</ul>
+<p>When the <i>OPOST</i> option is disabled, all other option bits in <i>
+c_oflag</i> are ignored. </p>
+<h3><a name="3_1_5">Control Characters</a></h3>
+<p>The <i>c_cc</i> character array contains control character 
+definitions as well as timeout parameters. Constants are defined for 
+every element of this array. 
+</p><center>
+<table border=""><caption align="CENTER">Table 9 - Control Characters in 
+the c_cc Member</caption>
+<tbody><tr><th>Constant</th><th>Description</th><th>Key</th></tr>
+<tr><td>VINTR</td><td>Interrupt</td><td>CTRL-C</td></tr>
+<tr><td>VQUIT</td><td>Quit</td><td>CTRL-Z</td></tr>
+<tr><td>VERASE</td><td>Erase</td><td>Backspace (BS)</td></tr>
+<tr><td>VKILL</td><td>Kill-line</td><td>CTRL-U</td></tr>
+<tr><td>VEOF</td><td>End-of-file</td><td>CTRL-D</td></tr>
+<tr><td>VEOL</td><td>End-of-line</td><td>Carriage return (CR)</td></tr>
+<tr><td>VEOL2</td><td>Second end-of-line</td><td>Line feed (LF)</td></tr>
+<tr><td>VMIN</td><td>Minimum number of characters to read</td></tr>
+<tr><td>VTIME</td><td>Time to wait for data (tenths of seconds)</td></tr>
+</tbody></table>
+</center>
+<p></p>
+<h4>Setting Software Flow Control Characters</h4>
+<p>The <i>VSTART</i> and <i>VSTOP</i> elements of the <i>c_cc</i> array 
+contain the characters used for software flow control. Normally they 
+should be set to DC1 (021 octal) and DC3 (023 octal) which represent 
+the <a href="https://www.cmrr.umn.edu/~strupp/serial.html#ascii">ASCII</a> standard XON and XOFF characters. </p>
+<h4>Setting Read Timeouts</h4>
+<p>UNIX serial interface drivers provide the ability to specify 
+character and packet timeouts. Two elements of the <i>c_cc</i> array 
+are used for timeouts: <i>VMIN</i> and <i>VTIME</i>. <b>Timeouts are 
+ignored in canonical input mode or when the <i>NDELAY</i> option is set 
+on the file via <i>open</i> or <i>fcntl</i>.</b></p>
+<p><i>VMIN</i> specifies the minimum number of characters to read. If 
+it is set to 0, then the <i>VTIME</i> value specifies the time to wait 
+for every character read. Note that this does not mean that a <i>read</i>
+ call for N bytes will wait for N characters to come in. Rather, the 
+timeout will apply to the first character and the <i>read</i> call will 
+return the number of characters immediately available (up to the number 
+you request). </p>
+<p>If <i>VMIN</i> is non-zero, <i>VTIME</i> specifies the time to wait 
+for the first character read. If a character is read within the time 
+given, any read will block (wait) until all <i>VMIN</i> characters are 
+read. That is, once the first character is read, the serial interface 
+driver expects to receive an entire packet of characters (<i>VMIN</i>
+ bytes total). If no character is read within the time allowed, then 
+the call to <i>read</i> returns 0. This method allows you to tell the 
+serial driver you need exactly N bytes and any <i>read</i> call will 
+return 0 or N bytes. However, the timeout only applies to the first 
+character read, so if for some reason the driver misses one character 
+inside the N byte packet then the <i>read</i> call could block forever 
+waiting for additional input characters. </p>
+<p><i>VTIME</i> specifies the amount of time to wait for incoming 
+characters in tenths of seconds. If <i>VTIME</i> is set to 0 (the 
+default), reads will block (wait) indefinitely unless the <i>NDELAY</i>
+ option is set on the port with <i>open</i> or <i>fcntl</i>. </p>
+<hr>
+<h1 align="RIGHT"><a name="modem">Chapter 3, MODEM Communications</a></h1>
+<p>This chapter covers the basics of dialup telephone 
+Modulator/Demodulator (MODEM) communications. Examples are provided for 
+MODEMs that use the defacto standard "AT" command set. </p>
+<h2><a name="4_1">What Is a MODEM?</a></h2>
+<p>MODEMs are devices that modulate serial data into frequencies that 
+can be transferred over an analog data link such as a telephone line or 
+cable TV connection. A standard telephone MODEM converts serial data 
+into tones that can be passed over the phone lines; because of the 
+speed and complexity of the conversion these tones sound more like loud 
+screeching if you listen to them. </p>
+<p>Telephone MODEMs are available today that can transfer data across a 
+telephone line at nearly 53,000 bits per second, or 53kbps. In 
+addition, most MODEMs use data compression technology that can increase 
+the bit rate to well over 100kbps on some types of data. </p>
+<h2><a name="4_2">Communicating With a MODEM</a></h2>
+<p>The first step in communicating with a MODEM is to open and 
+configure the port for <i>raw</i> input: </p>
+<ul>
+<p>Listing 3 - Configuring the port for raw input. </p>
+<pre>int            fd;
+struct termios options;
+
+/* open the port */
+fd = open("/dev/ttyf1", O_RDWR | O_NOCTTY | O_NDELAY);
+fcntl(fd, F_SETFL, 0);
+
+/* get the current options */
+tcgetattr(fd, &amp;options);
+
+/* set raw input, 1 second timeout */
+options.c_cflag     |= (CLOCAL | CREAD);
+options.c_lflag     &amp;= ~(ICANON | ECHO | ECHOE | ISIG);
+options.c_oflag     &amp;= ~OPOST;
+options.c_cc[VMIN]  = 0;
+options.c_cc[VTIME] = 10;
+
+/* set the options */
+tcsetattr(fd, TCSANOW, &amp;options);
+</pre>
+</ul>
+<p>Next you need to establish communications with the MODEM. The best 
+way to do this is by sending the "AT" command to the MODEM. This also 
+allows smart MODEMs to detect the baud you are using. When the MODEM is 
+connected correctly and powered on it will respond with the response 
+"OK". </p>
+<ul>
+<p>Listing 4 - Initializing the MODEM. </p>
+<pre>int                  /* O - 0 = MODEM ok, -1 = MODEM bad */
+init_modem(int fd)   /* I - Serial port file */
+{
+  char buffer[255];  /* Input buffer */
+  char *bufptr;      /* Current char in buffer */
+  int  nbytes;       /* Number of bytes read */
+  int  tries;        /* Number of tries so far */
+
+  for (tries = 0; tries &lt; 3; tries ++)
+  {
+   /* send an AT command followed by a CR */
+    if (write(fd, "AT\r", 3) &lt; 3)
+      continue;
+
+   /* read characters into our string buffer until we get a CR or NL */
+    bufptr = buffer;
+    while ((nbytes = read(fd, bufptr, buffer + sizeof(buffer) - bufptr - 1)) &gt; 0)
+    {
+      bufptr += nbytes;
+      if (bufptr[-1] == '\n' || bufptr[-1] == '\r')
+        break;
+    }
+
+   /* nul terminate the string and see if we got an OK response */
+    *bufptr = '\0';
+
+    if (strncmp(buffer, "OK", 2) == 0)
+      return (0);
+  }
+
+  return (-1);
+}
+</pre>
+</ul>
+<h3><a name="4_2_1">Standard MODEM Commands</a></h3>
+<p>Most MODEMs support the "AT" command set, so called because each 
+command starts with the "AT" characters. Each command is sent with the 
+"AT" characters starting in the first column followed by the specific 
+command and a carriage return (CR, 015 octal). After processing the 
+command the MODEM will reply with one of several textual messages 
+depending on the command. </p>
+<h4>ATD - Dial A Number</h4>
+<p>The <i>ATD</i> command dials the specified number. In addition to 
+numbers and dashes you can specify tone ("T") or pulse ("P") dialing, 
+pause for one second (","), and wait for a dialtone ("W"): </p>
+<ul>
+<pre>ATDT 555-1212
+ATDT 18008008008W1234,1,1234
+ATD T555-1212WP1234
+</pre>
+</ul>
+<p>The MODEM will reply with one of the following messages: </p>
+<ul>
+<pre>NO DIALTONE
+BUSY
+NO CARRIER
+CONNECT
+CONNECT <i>baud</i>
+</pre>
+</ul>
+<h4>ATH - Hang Up</h4>
+<p>The <i>ATH</i> command causes the MODEM to hang up. Since the MODEM 
+must be in "command" mode you probably won't use it during a normal 
+phone call. </p>
+<p>Most MODEMs will also hang up if DTR is dropped; you can do this by 
+setting the baud to 0 for at least 1 second. Dropping DTR also returns 
+the MODEM to command mode. </p>
+<p>After a successful hang up the MODEM will reply with "NO CARRIER". 
+If the MODEM is still connected the "CONNECT" or "CONNECT baud" message 
+will be sent. </p>
+<h4>ATZ - Reset MODEM</h4>
+ The <i>ATZ</i> command resets the MODEM. The MODEM will reply with the 
+string "OK". 
+<h3><a name="4_2_2">Common MODEM Communication Problems</a></h3>
+<p>First and foremost, <i>don't forget to disable input echoing</i>. 
+Input echoing will cause a feedback loop between the MODEM and 
+computer. </p>
+<p>Second, when sending MODEM commands you must terminate them with a 
+carriage return (CR) and not a newline (NL). The C character constant 
+for CR is "\r". </p>
+<p>Finally, when dealing with a MODEM make sure you use a baud that the 
+MODEM supports. While many MODEMs do auto-baud detection, some have 
+limits (19.2kbps is common) that you must observe. </p>
+<hr>
+<h1 align="RIGHT"><a name="advanced">Chapter 4, Advanced Serial 
+Programming</a></h1>
+<p>This chapter covers advanced serial programming techniques using the <i>
+ioctl(2)</i> and <i>select(2)</i> system calls. </p>
+<h2><a name="5_1">Serial Port IOCTLs</a></h2>
+<p>In <a href="https://www.cmrr.umn.edu/~strupp/serial.html#config">Chapter 2, Configuring the Serial Port</a> we 
+used the <i>tcgetattr</i> and <i>tcsetattr</i> functions to configure 
+the serial port. Under UNIX these functions use the <i>ioctl(2)</i>
+ system call to do their magic. </p>
+<p>The <i>ioctl</i> system call takes three arguments: </p>
+<ul>
+<pre>int ioctl(int fd, int request, ...);
+</pre>
+</ul>
+<p>The <i>fd</i> argument specifies the serial port file descriptor. 
+The <i>request</i> argument is a constant defined in the <code>
+&lt;termios.h&gt;</code> header file and is typically one of the following: 
+</p><center>
+<table border="" width="80%"><caption align="CENTER">Table 10 - IOCTL 
+Requests for Serial Ports</caption>
+<tbody><tr><th>Request</th><th>Description</th><th nowrap="">POSIX Function</th></tr>
+<tr><td>TCGETS</td><td>Gets the current serial port settings.</td><td nowrap="">
+tcgetattr</td></tr>
+<tr><td>TCSETS</td><td>Sets the serial port settings immediately.</td><td nowrap="">tcsetattr(fd, TCSANOW, &amp;options)</td></tr>
+<tr><td>TCSETSF</td><td>Sets the serial port settings after flushing 
+the input and output buffers.</td><td nowrap="">tcsetattr(fd, TCSANOW, 
+&amp;options)</td></tr>
+<tr><td>TCSETSW</td><td>Sets the serial port settings after allowing 
+the input and output buffers  to drain/empty.</td><td nowrap="">
+tcsetattr(fd, TCSANOW, &amp;options)</td></tr>
+<tr><td>TCSBRK</td><td>Sends a break for the given time.</td><td nowrap="">
+tcsendbreak, tcdrain</td></tr>
+<tr><td>TCXONC</td><td>Controls software flow control.</td><td nowrap="">
+tcflow</td></tr>
+<tr><td>TCFLSH</td><td>Flushes the input and/or output queue.</td><td nowrap="">
+tcflush</td></tr>
+<tr><td>TIOCMGET</td><td>Returns the state of the "MODEM" bits.</td><td nowrap="">
+None</td></tr>
+<tr><td>TIOCMSET</td><td>Sets the state of the "MODEM" bits.</td><td nowrap="">
+None</td></tr>
+<tr><td>FIONREAD</td><td>Returns the number of bytes in the input 
+buffer.</td><td nowrap="">None</td></tr>
+</tbody></table>
+</center>
+<p></p>
+<h3><a name="5_1_1">Getting the Control Signals</a></h3>
+<p>The <code>TIOCMGET</code><i> ioctl</i> gets the current "MODEM" 
+status bits, which consist of all of the RS-232 signal lines except <b>
+RXD</b> and <b>TXD</b>: 
+</p><center>
+<table border=""><caption align="CENTER">Table 11 - Control Signal 
+Constants</caption>
+<tbody><tr><th>Constant</th><th>Description</th></tr>
+<tr><td>TIOCM_LE</td><td>DSR (data set ready/line enable)</td></tr>
+<tr><td>TIOCM_DTR</td><td>DTR (data terminal ready)</td></tr>
+<tr><td>TIOCM_RTS</td><td>RTS (request to send)</td></tr>
+<tr><td>TIOCM_ST</td><td>Secondary TXD (transmit)</td></tr>
+<tr><td>TIOCM_SR</td><td>Secondary RXD (receive)</td></tr>
+<tr><td>TIOCM_CTS</td><td>CTS (clear to send)</td></tr>
+<tr><td>TIOCM_CAR</td><td>DCD (data carrier detect)</td></tr>
+<tr><td>TIOCM_CD</td><td>Synonym for TIOCM_CAR</td></tr>
+<tr><td>TIOCM_RNG</td><td>RNG (ring)</td></tr>
+<tr><td>TIOCM_RI</td><td>Synonym for TIOCM_RNG</td></tr>
+<tr><td>TIOCM_DSR</td><td>DSR (data set ready)</td></tr>
+</tbody></table>
+</center>
+<p></p>
+<p>To get the status bits, call <i>ioctl</i> with a pointer to an 
+integer to hold the bits: </p>
+<ul>
+<p>Listing 5 - Getting the MODEM status bits. </p>
+<pre>#include &lt;unistd.h&gt;
+#include &lt;termios.h&gt;
+
+int fd;
+int status;
+
+ioctl(fd, TIOCMGET, &amp;status);
+</pre>
+</ul>
+<h3><a name="5_1_2">Setting the Control Signals</a></h3>
+<p>The <code>TIOCMSET</code><i> ioctl</i> sets the "MODEM" status bits 
+defined above. To drop the DTR signal you can do: </p>
+<ul>
+<p>Listing 6 - Dropping DTR with the TIOCMSET ioctl. </p>
+<pre>#include &lt;unistd.h&gt;
+#include &lt;termios.h&gt;
+
+int fd;
+int status;
+
+ioctl(fd, TIOCMGET, &amp;status);
+
+status &amp;= ~TIOCM_DTR;
+
+ioctl(fd, TIOCMSET, status);
+</pre>
+</ul>
+<p>The bits that can be set depend on the operating system, driver, and 
+modes in use. Consult your operating system documentation for more 
+information. </p>
+<h3><a name="5_1_3">Getting the Number of Bytes Available</a></h3>
+<p>The <code>FIONREAD</code><i> ioctl</i> gets the number of bytes in 
+the serial port input buffer. As with <code>TIOCMGET</code> you pass in 
+a pointer to an integer to hold the number of bytes: </p>
+<ul>
+<p>Listing 7 - Getting the number of bytes in the input buffer. </p>
+<pre>#include &lt;unistd.h&gt;
+#include &lt;termios.h&gt;
+
+int fd;
+int bytes;
+
+ioctl(fd, FIONREAD, &amp;bytes);
+</pre>
+</ul>
+<p>This can be useful when polling a serial port for data, as your 
+program can determine the number of bytes in the input buffer before 
+attempting a read. </p>
+<h2><a name="5_2">Selecting Input from a Serial Port</a></h2>
+<p>While simple applications can poll or wait on data coming from the 
+serial port, most applications are not simple and need to handle input 
+from multiple sources. </p>
+<p>UNIX provides this capability through the <i>select(2)</i> system 
+call. This system call allows your program to check for input, output, 
+or error conditions on one or more file descriptors. The file 
+descriptors can point to serial ports, regular files, other devices, 
+pipes, or sockets. You can poll to check for pending input, wait for 
+input indefinitely, or timeout after a specific amount of time, making 
+the <i>select</i> system call extremely flexible. </p>
+<p>Most GUI Toolkits provide an interface to <i>select</i>; we will 
+discuss the X Intrinsics ("Xt") library later in this chapter. </p>
+<h3><a name="5_2_1">The SELECT System Call</a></h3>
+<p>The <i>select</i> system call accepts 5 arguments: </p>
+<ul>
+<pre>int select(int max_fd, fd_set *input, fd_set *output, fd_set *error,
+           struct timeval *timeout);
+</pre>
+</ul>
+<p>The <i>max_fd</i> argument specifies the highest numbered file 
+descriptor in the <i>input</i>, <i>output</i>, and <i>error</i> sets. 
+The <i>input</i>, <i>output</i>, and <i>error</i> arguments specify 
+sets of file descriptors for pending input, output, or error 
+conditions; specify <code>NULL</code> to disable monitoring for the 
+corresponding condition. These sets are initialized using three macros: </p>
+<ul>
+<pre>FD_ZERO(fd_set);
+FD_SET(fd, fd_set);
+FD_CLR(fd, fd_set);
+</pre>
+</ul>
+<p>The <i>FD_ZERO</i> macro clears the set entirely. The <i>FD_SET</i>
+ and <i>FD_CLR</i> macros add and remove a file descriptor from the 
+set, respectively. </p>
+<p>The <i>timeout</i> argument specifies a timeout value which consists 
+of seconds (<i>timeout.tv_sec</i>) and microseconds (<i>timeout.tv_usec</i>
+). To poll one or more file descriptors, set the seconds and 
+microseconds to zero. To wait indefinitely specify <code>NULL</code>
+ for the timeout pointer. </p>
+<p>The <i>select</i> system call returns the number of file descriptors 
+that have a pending condition, or -1 if there was an error. </p>
+<h3><a name="5_2_2">Using the SELECT System Call</a></h3>
+<p>Suppose we are reading data from a serial port and a socket. We want 
+to check for input from either file descriptor, but want to notify the 
+user if no data is seen within 10 seconds. To do this we'll need to use 
+the <i>select</i> system call: 
+<!-- PAGE BREAK ---->
+</p>
+<ul>
+<p>Listing 8 - Using SELECT to process input from more than one source. </p>
+<pre>#include &lt;unistd.h&gt;
+#include &lt;sys/types.h&gt;
+#include &lt;sys/time.h&gt;
+#include &lt;sys/select.h&gt;
+
+int            n;
+int            socket;
+int            fd;
+int            max_fd;
+fd_set         input;
+struct timeval timeout;
+
+/* Initialize the input set */
+FD_ZERO(input);
+FD_SET(fd, input);
+FD_SET(socket, input);
+
+max_fd = (socket &gt; fd ? socket : fd) + 1;
+
+/* Initialize the timeout structure */
+timeout.tv_sec  = 10;
+timeout.tv_usec = 0;
+
+/* Do the select */
+n = select(max_fd,  NULL, NULL, ;
+
+/* See if there was an error */
+if (n 0)
+  perror("select failed");
+else if (n == 0)
+  puts("TIMEOUT");
+else
+{
+  /* We have input */
+  if (FD_ISSET(fd, input))
+    process_fd();
+  if (FD_ISSET(socket, input))
+    process_socket();
+}
+</pre>
+</ul>
+<p>You'll notice that we first check the return value of the <i>select</i>
+ system call. Values of 0 and -1 yield the appropriate warning and 
+error messages. Values greater than 0 mean that we have data pending on 
+one or more file descriptors. </p>
+<p>To determine which file descriptor(s) have pending input, we use the <i>
+FD_ISSET</i> macro to test the input set for each file descriptor. If 
+the file descriptor flag is set then the condition exists (input 
+pending in this case) and we need to do something. </p>
+<h3><a name="5_2_3">Using SELECT with the X Intrinsics Library</a></h3>
+<p>The X Intrinsics library provides an interface to the <i>select</i>
+ system call via the <i>XtAppAddInput(3x)</i> and <i>
+XtAppRemoveInput(3x)</i> functions: </p>
+<ul>
+<pre>int XtAppAddInput(XtAppContext context, int fd, int mask,
+                  XtInputProc proc, XtPointer data);
+void XtAppRemoveInput(XtAppContext context, int input);
+</pre>
+</ul>
+<p>The <i>select</i> system call is used internally to implement 
+timeouts, work procedures, and check for input from the X server. These 
+functions can be used with any Xt-based toolkit including Xaw, Lesstif, 
+and Motif. </p>
+<p>The <i>proc</i> argument to <i>XtAppAddInput</i> specifies the 
+function to call when the selected condition (e.g. input available) 
+exists on the file descriptor. In the previous example you could 
+specify the <i>process_fd</i> or <i>process_socket</i> functions. </p>
+<p>Because Xt limits your access to the <i>select</i> system call, 
+you'll need to implement timeouts through another mechanism, probably 
+via <i>XtAppAddTimeout(3x)</i>. </p>
+<hr>
+<h1 align="RIGHT"><a name="pinouts">Appendix A, Pinouts</a></h1>
+<p>This appendix provides pinout information for many of the common 
+serial ports you will find. </p>
+<h2><a name="6_1">RS-232 Pinouts</a></h2>
+<p>RS-232 comes in three flavors (A, B, C) and uses a 25-pin D-Sub 
+connector: </p>
+<p align="CENTER">Figure 2 - RS-232 Connector
+<br><img height="83" src="./Serial Programming Guide for POSIX Operating Systems_files/db25.gif" width="353"></p>
+<center>
+<table border=""><caption align="CENTER">Table 12 - RS-232 Signals</caption>
+<tbody><tr><th>Pin</th><th>Description</th><th>Pin</th><th>Description</th></tr>
+<tr><td>1</td><td>Earth Ground</td><td>14</td><td>Secondary TXD</td></tr>
+<tr><td>2</td><td><b>TXD</b> - Transmitted Data</td><td>15</td><td>
+Transmit Clock</td></tr>
+<tr><td>3</td><td><b>RXD</b> - Received Data</td><td>16</td><td>
+Secondary RXD</td></tr>
+<tr><td>4</td><td><b>RTS</b> - Request To Send</td><td>17</td><td>
+Receiver Clock</td></tr>
+<tr><td>5</td><td><b>CTS</b> - Clear To Send</td><td>18</td><td>
+Unassigned</td></tr>
+<tr><td>6</td><td><b>DSR</b> - Data Set Ready</td><td>19</td><td>
+Secondary RTS</td></tr>
+<tr><td>7</td><td><b>GND</b> - Logic Ground</td><td>20</td><td><b>DTR</b>
+ - Data Terminal Ready</td></tr>
+<tr><td>8</td><td><b>DCD</b> - Data Carrier Detect</td><td>21</td><td>
+Signal Quality Detect</td></tr>
+<tr><td>9</td><td>Reserved</td><td>22</td><td>Ring Detect</td></tr>
+<tr><td>10</td><td>Reserved</td><td>23</td><td>Data Rate Select</td></tr>
+<tr><td>11</td><td>Unassigned</td><td>24</td><td>Transmit Clock</td></tr>
+<tr><td>12</td><td>Secondary DCD</td><td>25</td><td>Unassigned</td></tr>
+<tr><td>13</td><td>Secondary CTS</td></tr>
+</tbody></table>
+</center>
+<h2><a name="6_2">RS-422 Pinouts</a></h2>
+<p>RS-422 also uses a 25-pin D-Sub connector, but with differential 
+signals: </p>
+<p align="CENTER">Figure 3 - RS-422 Connector
+<br><img height="83" src="./Serial Programming Guide for POSIX Operating Systems_files/db25.gif" width="353"></p>
+<center>
+<table border=""><caption align="CENTER">Table 13 - RS-422 Signals</caption>
+<tbody><tr><th>Pin</th><th>Description</th><th>Pin</th><th>Description</th></tr>
+<tr><td>1</td><td>Earth Ground</td><td>14</td><td>TXD+</td></tr>
+<tr><td>2</td><td><b>TXD-</b> - Transmitted Data</td><td>15</td><td>
+Transmit Clock-</td></tr>
+<tr><td>3</td><td><b>RXD-</b> - Received Data</td><td>16</td><td>RXD+</td>
+</tr>
+<tr><td>4</td><td><b>RTS-</b> - Request To Send</td><td>17</td><td>
+Receiver Clock-</td></tr>
+<tr><td>5</td><td><b>CTS-</b> - Clear To Send</td><td>18</td><td>
+Unassigned</td></tr>
+<tr><td>6</td><td><b>DSR</b> - Data Set Ready</td><td>19</td><td>RTS+</td>
+</tr>
+<tr><td>7</td><td><b>GND</b> - Logic Ground</td><td>20</td><td><b>DTR-</b>
+ - Data Terminal Ready</td></tr>
+<tr><td>8</td><td><b>DCD-</b> - Data Carrier Detect</td><td>21</td><td>
+Signal Quality Detect</td></tr>
+<tr><td>9</td><td>Reserved</td><td>22</td><td>Unassigned</td></tr>
+<tr><td>10</td><td>Reserved</td><td>23</td><td><b>DTR+</b></td></tr>
+<tr><td>11</td><td>Unassigned</td><td>24</td><td>Transmit Clock+</td></tr>
+<tr><td>12</td><td>DCD+</td><td>25</td><td>Receiver Clock+</td></tr>
+<tr><td>13</td><td>CTS+</td></tr>
+</tbody></table>
+</center>
+<h2><a name="6_3">RS-574 (IBM PC/AT) Pinouts</a></h2>
+<p>The RS-574 interface is used exclusively by PC manufacturers and 
+uses a 9-pin male D-Sub connector: </p>
+<p align="CENTER">Figure 4 - RS-574 Connector
+<br><img height="82" src="./Serial Programming Guide for POSIX Operating Systems_files/db9.gif" width="164"></p>
+<center>
+<table border=""><caption align="CENTER">Table 14 - RS-574 (IBM PC/AT) 
+Signals</caption>
+<tbody><tr><th>Pin</th><th>Description</th><th>Pin</th><th>Description</th></tr>
+<tr><td>1</td><td><b>DCD</b> - Data Carrier Detect</td><td>6</td><td>
+Data Set Ready</td></tr>
+<tr><td>2</td><td><b>RXD</b> - Received Data</td><td>7</td><td><b>RTS</b>
+ - Request To Send</td></tr>
+<tr><td>3</td><td><b>TXD</b> - Transmitted Data</td><td>8</td><td><b>CTS</b>
+ - Clear To Send</td></tr>
+<tr><td>4</td><td><b>DTR</b> - Data Terminal Ready</td><td>9</td><td>
+Ring Detect</td></tr>
+<tr><td>5</td><td><b>GND</b> - Logic Ground</td></tr>
+</tbody></table>
+</center>
+<h2><a name="6_4">SGI Pinouts</a></h2>
+<p>Older SGI equipment uses a 9-pin female D-Sub connector. Unlike 
+RS-574, the SGI pinouts nearly match those of RS-232: </p>
+<p align="CENTER">Figure 5 - SGI 9-Pin Connector
+<br><img height="82" src="./Serial Programming Guide for POSIX Operating Systems_files/db9.gif" width="164"></p>
+<center>
+<table border=""><caption align="CENTER">Table 15 - SGI 9-Pin DSUB Signals</caption>
+<tbody><tr><th>Pin</th><th>Description</th><th>Pin</th><th>Description</th></tr>
+<tr><td>1</td><td>Earth Ground</td><td>6</td><td><b>DSR</b> - Data Set 
+Ready</td></tr>
+<tr><td>2</td><td><b>TXD</b> - Transmitted Data</td><td>7</td><td><b>GND</b>
+ - Logic Ground</td></tr>
+<tr><td>3</td><td><b>RXD</b> - Received Data</td><td>8</td><td><b>DCD</b>
+ - Data Carrier Detect</td></tr>
+<tr><td>4</td><td><b>RTS</b> - Request To Send</td><td>9</td><td><b>DTR</b>
+ - Data Terminal Ready</td></tr>
+<tr><td>5</td><td><b>CTS</b> - Clear To Send</td></tr>
+</tbody></table>
+</center>
+<p>The SGI Indigo, Indigo2, and Indy workstations use the Apple 8-pin 
+MiniDIN connector for their serial ports: </p>
+<p align="CENTER">Figure 6 - SGI 8-Pin Connector
+<br><img height="112" src="./Serial Programming Guide for POSIX Operating Systems_files/mdin8.gif" width="112"></p>
+<center>
+<table border=""><caption align="CENTER">Table 16 - SGI 8-Pin MiniDIN 
+Signals</caption>
+<tbody><tr><th>Pin</th><th>Description</th><th>Pin</th><th>Description</th></tr>
+<tr><td>1</td><td><b>DTR</b> - Data Terminal Ready</td><td>5</td><td><b>
+RXD</b> - Received Data</td></tr>
+<tr><td>2</td><td><b>CTS</b> - Clear To Send</td><td>6</td><td><b>RTS</b>
+ - Request To Send</td></tr>
+<tr><td>3</td><td><b>TXD</b> - Transmitted Data</td><td>7</td><td><b>DCD</b>
+ - Data Carrier Detect</td></tr>
+<tr><td>4</td><td><b>GND</b> - Logic Ground</td><td>8</td><td><b>GND</b>
+ - Logic Ground</td></tr>
+</tbody></table>
+</center>
+<hr>
+<h1 align="RIGHT"><a name="ascii">Appendix B, ASCII Control Codes</a></h1>
+<p>This chapter lists the ASCII control codes and their names. </p>
+<h2><a name="7_1">Control Codes</a></h2>
+ The following ASCII characters are used for control purposes: 
+<center>
+<table border=""><caption align="CENTER">Table 17 - ASCII Control Codes</caption>
+<tbody><tr><th>Name</th><th>Binary</th><th>Octal</th><th>Decimal</th><th>
+Hexadecimal</th></tr>
+<tr><td>NUL</td><td>00000000</td><td>000</td><td>0</td><td>00</td></tr>
+<tr><td>SOH</td><td>00000001</td><td>001</td><td>1</td><td>01</td></tr>
+<tr><td>STX</td><td>00000010</td><td>002</td><td>2</td><td>02</td></tr>
+<tr><td>ETX</td><td>00000011</td><td>003</td><td>3</td><td>03</td></tr>
+<tr><td>EOT</td><td>00000100</td><td>004</td><td>4</td><td>04</td></tr>
+<tr><td>ENQ</td><td>00000101</td><td>005</td><td>5</td><td>05</td></tr>
+<tr><td>ACK</td><td>00000110</td><td>006</td><td>6</td><td>06</td></tr>
+<tr><td>BEL</td><td>00000111</td><td>007</td><td>7</td><td>07</td></tr>
+<tr><td>BS</td><td>00001000</td><td>010</td><td>8</td><td>08</td></tr>
+<tr><td>HT</td><td>00001001</td><td>011</td><td>9</td><td>09</td></tr>
+<tr><td>NL</td><td>00001010</td><td>012</td><td>10</td><td>0A</td></tr>
+<tr><td>VT</td><td>00001011</td><td>013</td><td>11</td><td>0B</td></tr>
+<tr><td>NP, FF</td><td>00001100</td><td>014</td><td>12</td><td>0C</td></tr>
+<tr><td>CR</td><td>00001101</td><td>015</td><td>13</td><td>0D</td></tr>
+<tr><td>SO</td><td>00001110</td><td>016</td><td>14</td><td>0E</td></tr>
+<tr><td>SI</td><td>00001111</td><td>017</td><td>15</td><td>0F</td></tr>
+<tr><td>DLE</td><td>00010000</td><td>020</td><td>16</td><td>10</td></tr>
+<tr><td>XON, DC1</td><td>00010001</td><td>021</td><td>17</td><td>11</td></tr>
+<tr><td>DC2</td><td>00010010</td><td>022</td><td>18</td><td>12</td></tr>
+<tr><td>XOFF, DC3</td><td>00010011</td><td>023</td><td>19</td><td>13</td>
+</tr>
+<tr><td>DC4</td><td>00010100</td><td>024</td><td>20</td><td>14</td></tr>
+<tr><td>NAK</td><td>00010101</td><td>025</td><td>21</td><td>15</td></tr>
+<tr><td>SYN</td><td>00010110</td><td>026</td><td>22</td><td>16</td></tr>
+<tr><td>ETB</td><td>00010111</td><td>027</td><td>23</td><td>17</td></tr>
+<tr><td>CAN</td><td>00011000</td><td>030</td><td>24</td><td>18</td></tr>
+<tr><td>EM</td><td>00011001</td><td>031</td><td>25</td><td>19</td></tr>
+<tr><td>SUB</td><td>00011010</td><td>032</td><td>26</td><td>1A</td></tr>
+<tr><td>ESC</td><td>00011011</td><td>033</td><td>27</td><td>1B</td></tr>
+<tr><td>FS</td><td>00011100</td><td>034</td><td>28</td><td>1C</td></tr>
+<tr><td>GS</td><td>00011101</td><td>035</td><td>29</td><td>1D</td></tr>
+<tr><td>RS</td><td>00011110</td><td>036</td><td>30</td><td>1E</td></tr>
+<tr><td>US</td><td>00011111</td><td>037</td><td>31</td><td>1F</td></tr>
+</tbody></table>
+</center>
+
+
+</body></html>
