@@ -230,7 +230,7 @@ int16_t sw_work(void)
 			switch (rx_data) {
 			case 'u':
 			case 'U':
-				LED1=1;
+				LED1 = 1;
 				V.comm_state = APP_STATE_WAIT_FOR_UDATA;
 				itoa(str, sizeof(L_union.L_tmp), 10);
 				USART_putsr("\r\n OK");
@@ -245,7 +245,7 @@ int16_t sw_work(void)
 				break;
 			default:
 				USART_putsr("\r\n NAK_I");
-				LED1=0;
+				LED1 = 0;
 				break;
 			}
 			break;
@@ -255,7 +255,7 @@ int16_t sw_work(void)
 			if (position >= strobe_max) {
 				USART_putsr(" NAK_D");
 				V.comm_state = APP_STATE_INIT;
-				LED1=0;
+				LED1 = 0;
 				break;
 			}
 			offset = 0;
@@ -274,7 +274,7 @@ int16_t sw_work(void)
 				L[position] = L_union.L_tmp;
 				V.comm_state = APP_STATE_INIT;
 				USART_putsr(" OK");
-				LED1=0;
+				LED1 = 0;
 			}
 			break;
 		case APP_STATE_WAIT_FOR_SDATA: // send
@@ -291,14 +291,14 @@ int16_t sw_work(void)
 			} while (offset < sizeof(L_union.L_tmp));
 			V.comm_state = APP_STATE_INIT;
 			USART_putsr(" OK");
-			LED1=0;
+			LED1 = 0;
 			break;
 		default:
 			USART_putsr(" NAK_C");
 			V.comm_state = APP_STATE_INIT;
 			if (ringBufS_full(&ring_buf1))
 				ringBufS_flush(&ring_buf1, 0);
-			LED1=0;
+			LED1 = 0;
 			break;
 		}
 	}
