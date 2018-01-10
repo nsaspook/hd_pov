@@ -1,7 +1,7 @@
 Disassembly Listing for hd_pov
 Generated From:
 /root/hd_pov/dist/default/production/hd_pov.production.elf
-Jan 9, 2018 7:10:06 PM
+Jan 9, 2018 7:33:18 PM
 
 ---  /root/hd_pov/ringbufs..c  --------------------------------------------------------------------------
 1:             
@@ -981,8 +981,11 @@ Jan 9, 2018 7:10:06 PM
 03EC  8689     BSF LATA, 3, ACCESS
 223:           	}
 224:           
-225:           	/* command state machine */
-226:           	if (!ringBufS_empty(&ring_buf1)) {
+225:           	/* command state machine 
+226:           	 * u update the current display buffer with remote rs232 data
+227:           	 * d display the current display buffer with rs232 data
+228:           	 */
+229:           	if (!ringBufS_empty(&ring_buf1)) {
 03EE  0EA3     MOVLW 0xA3
 03F0  0100     MOVLB 0x0
 03F2  6FB6     MOVWF __pcstackBANK0, BANKED
@@ -993,7 +996,7 @@ Jan 9, 2018 7:10:06 PM
 03FC  0900     IORLW 0x0
 03FE  A4D8     BTFSS STATUS, 2, ACCESS
 0400  0012     RETURN 0
-227:           		rx_data = ringBufS_get(&ring_buf1);
+230:           		rx_data = ringBufS_get(&ring_buf1);
 0402  0EA3     MOVLW 0xA3
 0404  0100     MOVLB 0x0
 0406  6FB9     MOVWF _this, BANKED
@@ -1003,7 +1006,7 @@ Jan 9, 2018 7:10:06 PM
 040E  F004     NOP
 0410  0100     MOVLB 0x0
 0412  6F88     MOVWF rx_data, BANKED
-228:           		switch (V.comm_state) {
+231:           		switch (V.comm_state) {
 0414  D116     BRA 0x642
 0642  5002     MOVF 0x2, W, ACCESS
 0644  0A00     XORLW 0x0
@@ -1022,8 +1025,8 @@ Jan 9, 2018 7:10:06 PM
 065E  B4D8     BTFSC STATUS, 2, ACCESS
 0660  D787     BRA 0x570
 0662  D7D1     BRA 0x606
-229:           		case APP_STATE_INIT:
-230:           			switch (rx_data) {
+232:           		case APP_STATE_INIT:
+233:           			switch (rx_data) {
 04A8  0100     MOVLB 0x0
 04AA  5188     MOVF rx_data, W, BANKED
 04AC  0A44     XORLW 0x44
@@ -1039,14 +1042,14 @@ Jan 9, 2018 7:10:06 PM
 04C0  B4D8     BTFSC STATUS, 2, ACCESS
 04C2  D7A9     BRA 0x416
 04C4  D7E8     BRA 0x496
-231:           			case 'u':
-232:           			case 'U':
-233:           				LED1 = 1;
+234:           			case 'u':
+235:           			case 'U':
+236:           				LED1 = 1;
 0416  8689     BSF LATA, 3, ACCESS
-234:           				V.comm_state = APP_STATE_WAIT_FOR_UDATA;
+237:           				V.comm_state = APP_STATE_WAIT_FOR_UDATA;
 0418  0E01     MOVLW 0x1
 041A  6E02     MOVWF 0x2, ACCESS
-235:           				itoa(str, sizeof(L_union.L_tmp), 10);
+238:           				itoa(str, sizeof(L_union.L_tmp), 10);
 041C  0E8B     MOVLW 0x8B
 041E  6FC6     MOVWF buf, BANKED
 0420  0E00     MOVLW 0x0
@@ -1061,7 +1064,7 @@ Jan 9, 2018 7:10:06 PM
 0432  6FCA     MOVWF base, BANKED
 0434  EC45     CALL 0xA8A, 0
 0436  F005     NOP
-236:           				USART_putsr("\r\n OK");
+239:           				USART_putsr("\r\n OK");
 0438  0E58     MOVLW 0x58
 043A  0100     MOVLB 0x0
 043C  6FB7     MOVWF value, BANKED
@@ -1069,7 +1072,7 @@ Jan 9, 2018 7:10:06 PM
 0440  6FB8     MOVWF c, BANKED
 0442  ECA1     CALL 0xB42, 0
 0444  F005     NOP
-237:           				USART_puts(str); // send size of data array
+240:           				USART_puts(str); // send size of data array
 0446  0E8B     MOVLW 0x8B
 0448  0100     MOVLB 0x0
 044A  6FB7     MOVWF value, BANKED
@@ -1077,14 +1080,14 @@ Jan 9, 2018 7:10:06 PM
 044E  6FB8     MOVWF c, BANKED
 0450  ECB7     CALL 0xB6E, 0
 0452  F005     NOP
-238:           				break;
+241:           				break;
 0454  0012     RETURN 0
-239:           			case 'd':
-240:           			case 'D':
-241:           				V.comm_state = APP_STATE_WAIT_FOR_DDATA;
+242:           			case 'd':
+243:           			case 'D':
+244:           				V.comm_state = APP_STATE_WAIT_FOR_DDATA;
 0456  0E03     MOVLW 0x3
 0458  6E02     MOVWF 0x2, ACCESS
-242:           				itoa(str, sizeof(L_union.L_tmp), 10);
+245:           				itoa(str, sizeof(L_union.L_tmp), 10);
 045A  0E8B     MOVLW 0x8B
 045C  0100     MOVLB 0x0
 045E  6FC6     MOVWF buf, BANKED
@@ -1100,7 +1103,7 @@ Jan 9, 2018 7:10:06 PM
 0472  6FCA     MOVWF base, BANKED
 0474  EC45     CALL 0xA8A, 0
 0476  F005     NOP
-243:           				USART_putsr("\r\n OK");
+246:           				USART_putsr("\r\n OK");
 0478  0E58     MOVLW 0x58
 047A  0100     MOVLB 0x0
 047C  6FB7     MOVWF value, BANKED
@@ -1108,7 +1111,7 @@ Jan 9, 2018 7:10:06 PM
 0480  6FB8     MOVWF c, BANKED
 0482  ECA1     CALL 0xB42, 0
 0484  F005     NOP
-244:           				USART_puts(str); // send size of data array
+247:           				USART_puts(str); // send size of data array
 0486  0E8B     MOVLW 0x8B
 0488  0100     MOVLB 0x0
 048A  6FB7     MOVWF value, BANKED
@@ -1116,10 +1119,10 @@ Jan 9, 2018 7:10:06 PM
 048E  6FB8     MOVWF c, BANKED
 0490  ECB7     CALL 0xB6E, 0
 0492  F005     NOP
-245:           				break;
+248:           				break;
 0494  0012     RETURN 0
-246:           			default:
-247:           				USART_putsr("\r\n NAK_I");
+249:           			default:
+250:           				USART_putsr("\r\n NAK_I");
 0496  0E41     MOVLW 0x41
 0498  0100     MOVLB 0x0
 049A  6FB7     MOVWF value, BANKED
@@ -1127,54 +1130,54 @@ Jan 9, 2018 7:10:06 PM
 049E  6FB8     MOVWF c, BANKED
 04A0  ECA1     CALL 0xB42, 0
 04A2  F005     NOP
-248:           				LED1 = 0;
+251:           				LED1 = 0;
 04A4  9689     BCF LATA, 3, ACCESS
-249:           				break;
-250:           			}
+252:           				break;
+253:           			}
 04A6  0012     RETURN 0
-251:           			break;
-252:           		case APP_STATE_WAIT_FOR_DDATA:
-253:           		case APP_STATE_WAIT_FOR_UDATA:
-254:           			position = rx_data;
+254:           			break;
+255:           		case APP_STATE_WAIT_FOR_DDATA:
+256:           		case APP_STATE_WAIT_FOR_UDATA:
+257:           			position = rx_data;
 04C6  C088     MOVFF rx_data, position
 04C8  F08A     NOP
-255:           			if (position >= strobe_max) {
+258:           			if (position >= strobe_max) {
 04CA  0E0F     MOVLW 0xF
 04CC  0100     MOVLB 0x0
 04CE  658A     CPFSGT position, BANKED
 04D0  D00A     BRA 0x4E6
-256:           				USART_putsr(" NAK_D");
+259:           				USART_putsr(" NAK_D");
 04D2  0E51     MOVLW 0x51
 04D4  6FB7     MOVWF value, BANKED
 04D6  0E03     MOVLW 0x3
 04D8  6FB8     MOVWF c, BANKED
 04DA  ECA1     CALL 0xB42, 0
 04DC  F005     NOP
-257:           				V.comm_state = APP_STATE_INIT;
+260:           				V.comm_state = APP_STATE_INIT;
 04DE  0E00     MOVLW 0x0
 04E0  6E02     MOVWF 0x2, ACCESS
-258:           				LED1 = 0;
+261:           				LED1 = 0;
 04E2  9689     BCF LATA, 3, ACCESS
-259:           				break;
+262:           				break;
 04E4  0012     RETURN 0
-260:           			}
-261:           			offset = 0;
+263:           			}
+264:           			offset = 0;
 04E6  0E00     MOVLW 0x0
 04E8  0100     MOVLB 0x0
 04EA  6F89     MOVWF offset, BANKED
-262:           			if (V.comm_state == APP_STATE_WAIT_FOR_UDATA)
+265:           			if (V.comm_state == APP_STATE_WAIT_FOR_UDATA)
 04EC  0402     DECF 0x2, W, ACCESS
 04EE  A4D8     BTFSS STATUS, 2, ACCESS
 04F0  D002     BRA 0x4F6
-263:           				V.comm_state = APP_STATE_WAIT_FOR_RDATA;
+266:           				V.comm_state = APP_STATE_WAIT_FOR_RDATA;
 04F2  0E02     MOVLW 0x2
 04F4  6E02     MOVWF 0x2, ACCESS
-264:           			if (V.comm_state == APP_STATE_WAIT_FOR_DDATA) {
+267:           			if (V.comm_state == APP_STATE_WAIT_FOR_DDATA) {
 04F6  0E03     MOVLW 0x3
 04F8  1802     XORWF 0x2, W, ACCESS
 04FA  A4D8     BTFSS STATUS, 2, ACCESS
 04FC  D00A     BRA 0x512
-265:           				L_tmp_ptr = (void*) &L[position]; // set to array position to read
+268:           				L_tmp_ptr = (void*) &L[position]; // set to array position to read
 04FE  518A     MOVF position, W, BANKED
 0500  0D05     MULLW 0x5
 0502  0E0E     MOVLW 0xE
@@ -1183,21 +1186,21 @@ Jan 9, 2018 7:10:06 PM
 0508  0E00     MOVLW 0x0
 050A  20F4     ADDWFC PRODH, W, ACCESS
 050C  6F87     MOVWF 0x87, BANKED
-266:           				V.comm_state = APP_STATE_WAIT_FOR_SDATA;
+269:           				V.comm_state = APP_STATE_WAIT_FOR_SDATA;
 050E  0E04     MOVLW 0x4
 0510  6E02     MOVWF 0x2, ACCESS
-267:           			}
-268:           			USART_putsr(" OK");
+270:           			}
+271:           			USART_putsr(" OK");
 0512  0E5A     MOVLW 0x5A
 0514  6FB7     MOVWF value, BANKED
 0516  0E03     MOVLW 0x3
 0518  6FB8     MOVWF c, BANKED
 051A  ECA1     CALL 0xB42, 0
 051C  F005     NOP
-269:           			break;
+272:           			break;
 051E  0012     RETURN 0
-270:           		case APP_STATE_WAIT_FOR_RDATA: // receive
-271:           			L_union.L_bytes[offset] = rx_data;
+273:           		case APP_STATE_WAIT_FOR_RDATA: // receive
+274:           			L_union.L_bytes[offset] = rx_data;
 0520  0100     MOVLB 0x0
 0522  5189     MOVF offset, W, BANKED
 0524  0D01     MULLW 0x1
@@ -1209,13 +1212,13 @@ Jan 9, 2018 7:10:06 PM
 0530  6EDA     MOVWF FSR2H, ACCESS
 0532  C088     MOVFF rx_data, INDF2
 0534  FFDF     NOP
-272:           			offset++;
+275:           			offset++;
 0536  2B89     INCF offset, F, BANKED
-273:           			if (offset >= sizeof(L_union.L_tmp)) {
+276:           			if (offset >= sizeof(L_union.L_tmp)) {
 0538  0E04     MOVLW 0x4
 053A  6589     CPFSGT offset, BANKED
 053C  0012     RETURN 0
-274:           				L[position] = L_union.L_tmp;
+277:           				L[position] = L_union.L_tmp;
 053E  EE20     LFSR 2, 0x80
 0540  F080     NOP
 0542  518A     MOVF position, W, BANKED
@@ -1231,24 +1234,24 @@ Jan 9, 2018 7:10:06 PM
 0556  FFE3     NOP
 0558  06E8     DECF WREG, F, ACCESS
 055A  E2FC     BC 0x554
-275:           				V.comm_state = APP_STATE_INIT;
+278:           				V.comm_state = APP_STATE_INIT;
 055C  0E00     MOVLW 0x0
 055E  6E02     MOVWF 0x2, ACCESS
-276:           				USART_putsr(" OK");
+279:           				USART_putsr(" OK");
 0560  0E5A     MOVLW 0x5A
 0562  6FB7     MOVWF value, BANKED
 0564  0E03     MOVLW 0x3
 0566  6FB8     MOVWF c, BANKED
 0568  ECA1     CALL 0xB42, 0
 056A  F005     NOP
-277:           				LED1 = 0;
+280:           				LED1 = 0;
 056C  9689     BCF LATA, 3, ACCESS
-278:           			}
-279:           			break;
+281:           			}
+282:           			break;
 056E  0012     RETURN 0
-280:           		case APP_STATE_WAIT_FOR_SDATA: // send
-281:           			do {
-282:           				USART_putsr(" ,");
+283:           		case APP_STATE_WAIT_FOR_SDATA: // send
+284:           			do {
+285:           				USART_putsr(" ,");
 0570  0E61     MOVLW 0x61
 0572  0100     MOVLB 0x0
 0574  6FB7     MOVWF value, BANKED
@@ -1256,12 +1259,12 @@ Jan 9, 2018 7:10:06 PM
 0578  6FB8     MOVWF c, BANKED
 057A  ECA1     CALL 0xB42, 0
 057C  F005     NOP
-283:           				if (offset) {
+286:           				if (offset) {
 057E  0100     MOVLB 0x0
 0580  5189     MOVF offset, W, BANKED
 0582  B4D8     BTFSC STATUS, 2, ACCESS
 0584  D014     BRA 0x5AE
-284:           					itoa(str, *L_tmp_ptr, 16); // show hex
+287:           					itoa(str, *L_tmp_ptr, 16); // show hex
 0586  0E8B     MOVLW 0x8B
 0588  6FC6     MOVWF buf, BANKED
 058A  0E00     MOVLW 0x0
@@ -1281,9 +1284,9 @@ Jan 9, 2018 7:10:06 PM
 05A6  6FCA     MOVWF base, BANKED
 05A8  EC45     CALL 0xA8A, 0
 05AA  F005     NOP
-285:           				} else {
+288:           				} else {
 05AC  D014     BRA 0x5D6
-286:           					itoa(str, *L_tmp_ptr, 2); // show bits
+289:           					itoa(str, *L_tmp_ptr, 2); // show bits
 05AE  0E8B     MOVLW 0x8B
 05B0  0100     MOVLB 0x0
 05B2  6FC6     MOVWF buf, BANKED
@@ -1304,8 +1307,8 @@ Jan 9, 2018 7:10:06 PM
 05D0  6FCA     MOVWF base, BANKED
 05D2  EC45     CALL 0xA8A, 0
 05D4  F005     NOP
-287:           				}
-288:           				USART_puts(str);
+290:           				}
+291:           				USART_puts(str);
 05D6  0E8B     MOVLW 0x8B
 05D8  0100     MOVLB 0x0
 05DA  6FB7     MOVWF value, BANKED
@@ -1313,32 +1316,32 @@ Jan 9, 2018 7:10:06 PM
 05DE  6FB8     MOVWF c, BANKED
 05E0  ECB7     CALL 0xB6E, 0
 05E2  F005     NOP
-289:           				L_tmp_ptr++;
+292:           				L_tmp_ptr++;
 05E4  0100     MOVLB 0x0
 05E6  4B86     INFSNZ L_tmp_ptr, F, BANKED
 05E8  2B87     INCF 0x87, F, BANKED
-290:           				offset++;
+293:           				offset++;
 05EA  2B89     INCF offset, F, BANKED
-291:           			} while (offset < sizeof(L_union.L_tmp));
+294:           			} while (offset < sizeof(L_union.L_tmp));
 05EC  0E04     MOVLW 0x4
 05EE  6589     CPFSGT offset, BANKED
 05F0  D7BF     BRA 0x570
-292:           			V.comm_state = APP_STATE_INIT;
+295:           			V.comm_state = APP_STATE_INIT;
 05F2  0E00     MOVLW 0x0
 05F4  6E02     MOVWF 0x2, ACCESS
-293:           			USART_putsr(" OK");
+296:           			USART_putsr(" OK");
 05F6  0E5A     MOVLW 0x5A
 05F8  6FB7     MOVWF value, BANKED
 05FA  0E03     MOVLW 0x3
 05FC  6FB8     MOVWF c, BANKED
 05FE  ECA1     CALL 0xB42, 0
 0600  F005     NOP
-294:           			LED1 = 0;
+297:           			LED1 = 0;
 0602  9689     BCF LATA, 3, ACCESS
-295:           			break;
+298:           			break;
 0604  0012     RETURN 0
-296:           		default:
-297:           			USART_putsr(" NAK_C");
+299:           		default:
+300:           			USART_putsr(" NAK_C");
 0606  0E4A     MOVLW 0x4A
 0608  0100     MOVLB 0x0
 060A  6FB7     MOVWF value, BANKED
@@ -1346,10 +1349,10 @@ Jan 9, 2018 7:10:06 PM
 060E  6FB8     MOVWF c, BANKED
 0610  ECA1     CALL 0xB42, 0
 0612  F005     NOP
-298:           			V.comm_state = APP_STATE_INIT;
+301:           			V.comm_state = APP_STATE_INIT;
 0614  0E00     MOVLW 0x0
 0616  6E02     MOVWF 0x2, ACCESS
-299:           			if (ringBufS_full(&ring_buf1))
+302:           			if (ringBufS_full(&ring_buf1))
 0618  0EA3     MOVLW 0xA3
 061A  0100     MOVLB 0x0
 061C  6FB6     MOVWF __pcstackBANK0, BANKED
@@ -1360,7 +1363,7 @@ Jan 9, 2018 7:10:06 PM
 0626  0900     IORLW 0x0
 0628  B4D8     BTFSC STATUS, 2, ACCESS
 062A  D009     BRA 0x63E
-300:           				ringBufS_flush(&ring_buf1, 0);
+303:           				ringBufS_flush(&ring_buf1, 0);
 062C  0EA3     MOVLW 0xA3
 062E  0100     MOVLB 0x0
 0630  6FBE     MOVWF _this, BANKED
@@ -1370,10 +1373,10 @@ Jan 9, 2018 7:10:06 PM
 0638  6FC0     MOVWF clearBuffer, BANKED
 063A  ECF0     CALL 0x9E0, 0
 063C  F004     NOP
-301:           			LED1 = 0;
+304:           			LED1 = 0;
 063E  9689     BCF LATA, 3, ACCESS
-302:           			break;
-303:           		}
+305:           			break;
+306:           		}
 0640  0012     RETURN 0
 0642  5002     MOVF 0x2, W, ACCESS
 0644  0A00     XORLW 0x0
@@ -1392,138 +1395,138 @@ Jan 9, 2018 7:10:06 PM
 065E  B4D8     BTFSC STATUS, 2, ACCESS
 0660  D787     BRA 0x570
 0662  D7D1     BRA 0x606
-304:           	}
-305:           
-306:           	return 0;
-307:           }
+307:           	}
 308:           
-309:           void init_rmsmon(void)
-310:           {
-311:           	/*
-312:           	 * check for a clean POR
-313:           	 */
-314:           	V.boot_code = FALSE;
+309:           	return 0;
+310:           }
+311:           
+312:           void init_rmsmon(void)
+313:           {
+314:           	/*
+315:           	 * check for a clean POR
+316:           	 */
+317:           	V.boot_code = FALSE;
 0808  9203     BCF 0x3, 1, ACCESS
-315:           	if (RCON != 0b0011100)
+318:           	if (RCON != 0b0011100)
 080A  0E1C     MOVLW 0x1C
 080C  18D0     XORWF RCON, W, ACCESS
 080E  A4D8     BTFSS STATUS, 2, ACCESS
-316:           		V.boot_code = TRUE;
+319:           		V.boot_code = TRUE;
 0810  8203     BSF 0x3, 1, ACCESS
-317:           
-318:           	if (STKPTRbits.STKFUL || STKPTRbits.STKUNF) {
+320:           
+321:           	if (STKPTRbits.STKFUL || STKPTRbits.STKUNF) {
 0812  BEFC     BTFSC STKPTR, 7, ACCESS
 0814  D002     BRA 0x81A
 0816  ACFC     BTFSS STKPTR, 6, ACCESS
 0818  D003     BRA 0x820
-319:           		V.boot_code = TRUE;
+322:           		V.boot_code = TRUE;
 081A  8203     BSF 0x3, 1, ACCESS
-320:           		STKPTRbits.STKFUL = 0;
+323:           		STKPTRbits.STKFUL = 0;
 081C  9EFC     BCF STKPTR, 7, ACCESS
-321:           		STKPTRbits.STKUNF = 0;
+324:           		STKPTRbits.STKUNF = 0;
 081E  9CFC     BCF STKPTR, 6, ACCESS
-322:           	}
-323:           
-324:           	ADCON1 = 0x7F; // all digital, no ADC
+325:           	}
+326:           
+327:           	ADCON1 = 0x7F; // all digital, no ADC
 0820  0E7F     MOVLW 0x7F
 0822  6EC1     MOVWF ADCON1, ACCESS
-325:           	/* interrupt priority ON */
-326:           	RCONbits.IPEN = 1;
+328:           	/* interrupt priority ON */
+329:           	RCONbits.IPEN = 1;
 0824  8ED0     BSF RCON, 7, ACCESS
-327:           	/* define I/O ports */
-328:           	RMSPORTA = RMSPORT_IOA;
+330:           	/* define I/O ports */
+331:           	RMSPORTA = RMSPORT_IOA;
 0826  0E10     MOVLW 0x10
 0828  6E92     MOVWF TRISA, ACCESS
-329:           	RMSPORTB = RMSPORT_IOB;
+332:           	RMSPORTB = RMSPORT_IOB;
 082A  0E11     MOVLW 0x11
 082C  6E93     MOVWF TRISB, ACCESS
-330:           
-331:           	G_OUT = LEDON; // preset all LEDS
+333:           
+334:           	G_OUT = LEDON; // preset all LEDS
 082E  9089     BCF LATA, 0, ACCESS
-332:           	LED1 = LEDON;
+335:           	LED1 = LEDON;
 0830  9689     BCF LATA, 3, ACCESS
-333:           	LED2 = LEDON;
+336:           	LED2 = LEDON;
 0832  9689     BCF LATA, 3, ACCESS
-334:           	LED3 = LEDON;
+337:           	LED3 = LEDON;
 0834  9689     BCF LATA, 3, ACCESS
-335:           	LED4 = LEDON;
+338:           	LED4 = LEDON;
 0836  9C8A     BCF LATB, 6, ACCESS
-336:           	LED5 = LEDON;
+339:           	LED5 = LEDON;
 0838  9E8A     BCF LATB, 7, ACCESS
-337:           	LED6 = LEDON;
+340:           	LED6 = LEDON;
 083A  9C89     BCF LATA, 6, ACCESS
-338:           	RPMLED = LEDON;
+341:           	RPMLED = LEDON;
 083C  9A8A     BCF LATB, 5, ACCESS
-339:           	timer0_off = TIMEROFFSET; // blink fast
+342:           	timer0_off = TIMEROFFSET; // blink fast
 083E  0E46     MOVLW 0x46
 0840  0100     MOVLB 0x0
 0842  6FD4     MOVWF 0xD4, BANKED
 0844  0E50     MOVLW 0x50
 0846  6FD3     MOVWF timer0_off, BANKED
-340:           	//	OpenTimer0(TIMER_INT_ON & T0_16BIT & T0_SOURCE_INT & T0_PS_1_256); // led blinker
-341:           	T0CON = 0b10000111;
+343:           	//	OpenTimer0(TIMER_INT_ON & T0_16BIT & T0_SOURCE_INT & T0_PS_1_256); // led blinker
+344:           	T0CON = 0b10000111;
 0848  0E87     MOVLW 0x87
 084A  6ED5     MOVWF T0CON, ACCESS
-342:           	WRITETIMER0(timer0_off); //	start timer0 at ~1/2 second ticks
+345:           	WRITETIMER0(timer0_off); //	start timer0 at ~1/2 second ticks
 084C  51D4     MOVF 0xD4, W, BANKED
 084E  6ED7     MOVWF TMR0H, ACCESS
 0850  C0D3     MOVFF timer0_off, TMR0
 0852  FFD6     NOP
-343:           	//	OpenTimer1(TIMER_INT_ON & T1_16BIT_RW & T1_SOURCE_INT & T1_PS_1_2 & T1_OSC1EN_OFF & T1_SYNC_EXT_OFF); // strobe position clock
-344:           	T1CON = 0b10010101;
+346:           	//	OpenTimer1(TIMER_INT_ON & T1_16BIT_RW & T1_SOURCE_INT & T1_PS_1_2 & T1_OSC1EN_OFF & T1_SYNC_EXT_OFF); // strobe position clock
+347:           	T1CON = 0b10010101;
 0854  0E95     MOVLW 0x95
 0856  6ECD     MOVWF T1CON, ACCESS
-345:           	WRITETIMER1(timer1_off);
+348:           	WRITETIMER1(timer1_off);
 0858  51D2     MOVF 0xD2, W, BANKED
 085A  6ECF     MOVWF TMR1H, ACCESS
 085C  C0D1     MOVFF timer1_off, TMR1
 085E  FFCE     NOP
-346:           	/* data link */
-347:           	COMM_ENABLE = TRUE; // for PICDEM4 onboard RS-232, not used on custom board
+349:           	/* data link */
+350:           	COMM_ENABLE = TRUE; // for PICDEM4 onboard RS-232, not used on custom board
 0860  868A     BSF LATB, 3, ACCESS
-348:           	TXSTAbits.TXEN = 1;
+351:           	TXSTAbits.TXEN = 1;
 0862  8AAC     BSF TXSTA, 5, ACCESS
-349:           	RCSTAbits.CREN = 1;
+352:           	RCSTAbits.CREN = 1;
 0864  88AB     BSF RCSTA, 4, ACCESS
-350:           	RCSTAbits.SPEN = 1;
+353:           	RCSTAbits.SPEN = 1;
 0866  8EAB     BSF RCSTA, 7, ACCESS
-351:           	TXSTAbits.SYNC = 0;
+354:           	TXSTAbits.SYNC = 0;
 0868  98AC     BCF TXSTA, 4, ACCESS
-352:           	TXSTAbits.SYNC = 0;
+355:           	TXSTAbits.SYNC = 0;
 086A  98AC     BCF TXSTA, 4, ACCESS
-353:           	TXSTAbits.BRGH = 0;
+356:           	TXSTAbits.BRGH = 0;
 086C  94AC     BCF TXSTA, 2, ACCESS
-354:           	BAUDCTLbits.BRG16 = 1;
+357:           	BAUDCTLbits.BRG16 = 1;
 086E  86AA     BSF BAUDCTL, 3, ACCESS
-355:           	SPBRG = 129; /* 19200 baud */
+358:           	SPBRG = 129; /* 19200 baud */
 0870  0E81     MOVLW 0x81
 0872  6EAF     MOVWF SPBRG, ACCESS
-356:           
-357:           	/*      work int thread setup */
-358:           	INTCONbits.TMR0IE = 1; // enable int
+359:           
+360:           	/*      work int thread setup */
+361:           	INTCONbits.TMR0IE = 1; // enable int
 0874  8AF2     BSF INTCON, 5, ACCESS
-359:           	INTCON2bits.TMR0IP = 1; // make it high P
+362:           	INTCON2bits.TMR0IP = 1; // make it high P
 0876  84F1     BSF INTCON2, 2, ACCESS
-360:           
-361:           	PIE1bits.TMR1IE = 1;
-0878  809D     BSF PIE1, 0, ACCESS
-362:           	IPR1bits.TMR1IP = 1;
-087A  809F     BSF IPR1, 0, ACCESS
 363:           
-364:           	INTCONbits.INT0IE = 1; // enable RPM sensor input
-087C  88F2     BSF INTCON, 4, ACCESS
-365:           	INTCON2bits.RBPU = 0; // enable weak pull-ups
-087E  9EF1     BCF INTCON2, 7, ACCESS
+364:           	PIE1bits.TMR1IE = 1;
+0878  809D     BSF PIE1, 0, ACCESS
+365:           	IPR1bits.TMR1IP = 1;
+087A  809F     BSF IPR1, 0, ACCESS
 366:           
-367:           	PIE1bits.RCIE = 1; // enable rs232 serial receive interrupts
-0880  8A9D     BSF PIE1, 5, ACCESS
-368:           	IPR1bits.RCIP = 1;
-0882  8A9F     BSF IPR1, 5, ACCESS
+367:           	INTCONbits.INT0IE = 1; // enable RPM sensor input
+087C  88F2     BSF INTCON, 4, ACCESS
+368:           	INTCON2bits.RBPU = 0; // enable weak pull-ups
+087E  9EF1     BCF INTCON2, 7, ACCESS
 369:           
-370:           	init_rms_params();
+370:           	PIE1bits.RCIE = 1; // enable rs232 serial receive interrupts
+0880  8A9D     BSF PIE1, 5, ACCESS
+371:           	IPR1bits.RCIP = 1;
+0882  8A9F     BSF IPR1, 5, ACCESS
+372:           
+373:           	init_rms_params();
 0884  EC32     CALL 0x664, 0
 0886  F003     NOP
-371:           	ringBufS_init(&ring_buf1);
+374:           	ringBufS_init(&ring_buf1);
 0888  0EA3     MOVLW 0xA3
 088A  0100     MOVLB 0x0
 088C  6FBE     MOVWF _this, BANKED
@@ -1531,32 +1534,32 @@ Jan 9, 2018 7:10:06 PM
 0890  6FBF     MOVWF val, BANKED
 0892  ECCA     CALL 0xB94, 0
 0894  F005     NOP
-372:           
-373:           	/* Enable all high priority interrupts */
-374:           	INTCONbits.GIEH = 1;
+375:           
+376:           	/* Enable all high priority interrupts */
+377:           	INTCONbits.GIEH = 1;
 0896  8EF2     BSF INTCON, 7, ACCESS
-375:           }
+378:           }
 0898  0012     RETURN 0
-376:           
-377:           uint8_t init_rms_params(void)
-378:           {
-379:           	V.spinning = FALSE;
+379:           
+380:           uint8_t init_rms_params(void)
+381:           {
+382:           	V.spinning = FALSE;
 0664  9003     BCF 0x3, 0, ACCESS
-380:           	V.valid = TRUE;
+383:           	V.valid = TRUE;
 0666  8001     BSF V, 0, ACCESS
-381:           	V.comm = FALSE;
+384:           	V.comm = FALSE;
 0668  9201     BCF V, 1, ACCESS
-382:           	V.comm_state = 0;
+385:           	V.comm_state = 0;
 066A  0E00     MOVLW 0x0
 066C  6E02     MOVWF 0x2, ACCESS
-383:           	V.line_num = 0;
+386:           	V.line_num = 0;
 066E  0EF3     MOVLW 0xF3
 0670  1603     ANDWF 0x3, F, ACCESS
-384:           	V.comm_state = APP_STATE_INIT;
+387:           	V.comm_state = APP_STATE_INIT;
 0672  0E00     MOVLW 0x0
 0674  6E02     MOVWF 0x2, ACCESS
-385:           
-386:           	USART_putsr("\r\nVersion ");
+388:           
+389:           	USART_putsr("\r\nVersion ");
 0676  0E36     MOVLW 0x36
 0678  0100     MOVLB 0x0
 067A  6FB7     MOVWF value, BANKED
@@ -1564,7 +1567,7 @@ Jan 9, 2018 7:10:06 PM
 067E  6FB8     MOVWF c, BANKED
 0680  ECA1     CALL 0xB42, 0
 0682  F005     NOP
-387:           	USART_putsr(versions);
+390:           	USART_putsr(versions);
 0684  0E16     MOVLW 0x16
 0686  0100     MOVLB 0x0
 0688  6FB7     MOVWF value, BANKED
@@ -1572,7 +1575,7 @@ Jan 9, 2018 7:10:06 PM
 068C  6FB8     MOVWF c, BANKED
 068E  ECA1     CALL 0xB42, 0
 0690  F005     NOP
-388:           	USART_putsr(", ");
+391:           	USART_putsr(", ");
 0692  0E5E     MOVLW 0x5E
 0694  0100     MOVLB 0x0
 0696  6FB7     MOVWF value, BANKED
@@ -1580,7 +1583,7 @@ Jan 9, 2018 7:10:06 PM
 069A  6FB8     MOVWF c, BANKED
 069C  ECA1     CALL 0xB42, 0
 069E  F005     NOP
-389:           	itoa(str, sizeof(L[0]), 10);
+392:           	itoa(str, sizeof(L[0]), 10);
 06A0  0E8B     MOVLW 0x8B
 06A2  0100     MOVLB 0x0
 06A4  6FC6     MOVWF buf, BANKED
@@ -1596,7 +1599,7 @@ Jan 9, 2018 7:10:06 PM
 06B8  6FCA     MOVWF base, BANKED
 06BA  EC45     CALL 0xA8A, 0
 06BC  F005     NOP
-390:           	USART_puts(str);
+393:           	USART_puts(str);
 06BE  0E8B     MOVLW 0x8B
 06C0  0100     MOVLB 0x0
 06C2  6FB7     MOVWF value, BANKED
@@ -1604,7 +1607,7 @@ Jan 9, 2018 7:10:06 PM
 06C6  6FB8     MOVWF c, BANKED
 06C8  ECB7     CALL 0xB6E, 0
 06CA  F005     NOP
-391:           	USART_putsr(", ");
+394:           	USART_putsr(", ");
 06CC  0E5E     MOVLW 0x5E
 06CE  0100     MOVLB 0x0
 06D0  6FB7     MOVWF value, BANKED
@@ -1612,7 +1615,7 @@ Jan 9, 2018 7:10:06 PM
 06D4  6FB8     MOVWF c, BANKED
 06D6  ECA1     CALL 0xB42, 0
 06D8  F005     NOP
-392:           	USART_putsr(build_date);
+395:           	USART_putsr(build_date);
 06DA  0E01     MOVLW 0x1
 06DC  0100     MOVLB 0x0
 06DE  6FB7     MOVWF value, BANKED
@@ -1620,7 +1623,7 @@ Jan 9, 2018 7:10:06 PM
 06E2  6FB8     MOVWF c, BANKED
 06E4  ECA1     CALL 0xB42, 0
 06E6  F005     NOP
-393:           	USART_putsr(", ");
+396:           	USART_putsr(", ");
 06E8  0E5E     MOVLW 0x5E
 06EA  0100     MOVLB 0x0
 06EC  6FB7     MOVWF value, BANKED
@@ -1628,7 +1631,7 @@ Jan 9, 2018 7:10:06 PM
 06F0  6FB8     MOVWF c, BANKED
 06F2  ECA1     CALL 0xB42, 0
 06F4  F005     NOP
-394:           	USART_putsr(build_time);
+397:           	USART_putsr(build_time);
 06F6  0E0D     MOVLW 0xD
 06F8  0100     MOVLB 0x0
 06FA  6FB7     MOVWF value, BANKED
@@ -1636,93 +1639,93 @@ Jan 9, 2018 7:10:06 PM
 06FE  6FB8     MOVWF c, BANKED
 0700  ECA1     CALL 0xB42, 0
 0702  F005     NOP
-395:           
-396:           	L_ptr = &L[0];
+398:           
+399:           	L_ptr = &L[0];
 0704  0E0E     MOVLW 0xE
 0706  6E0C     MOVWF L_ptr, ACCESS
 0708  0E00     MOVLW 0x0
 070A  6E0D     MOVWF 0xD, ACCESS
-397:           	/* three line strobes in 3 16-bit timer values for spacing */
-398:           	/* for an interrupt driven state machine */
-399:           	L[0].strobe = 60000;
+400:           	/* three line strobes in 3 16-bit timer values for spacing */
+401:           	/* for an interrupt driven state machine */
+402:           	L[0].strobe = 60000;
 070C  0EEA     MOVLW 0xEA
 070E  6E12     MOVWF 0x12, ACCESS
 0710  0E60     MOVLW 0x60
 0712  6E11     MOVWF 0x11, ACCESS
-400:           	L[0].sequence.R = 1;
+403:           	L[0].sequence.R = 1;
 0714  820E     BSF L, 1, ACCESS
-401:           	L[0].sequence.offset = strobe_up;
+404:           	L[0].sequence.offset = strobe_up;
 0716  0E00     MOVLW 0x0
 0718  6E10     MOVWF 0x10, ACCESS
 071A  0E3C     MOVLW 0x3C
 071C  6E0F     MOVWF 0xF, ACCESS
-402:           
-403:           	L[1].strobe = 50000; // 62000
+405:           
+406:           	L[1].strobe = 50000; // 62000
 071E  0EC3     MOVLW 0xC3
 0720  6E17     MOVWF 0x17, ACCESS
 0722  0E50     MOVLW 0x50
 0724  6E16     MOVWF 0x16, ACCESS
-404:           	L[1].sequence.G = 1;
+407:           	L[1].sequence.G = 1;
 0726  8413     BSF 0x13, 2, ACCESS
-405:           	L[1].sequence.offset = strobe_down;
+408:           	L[1].sequence.offset = strobe_down;
 0728  0E01     MOVLW 0x1
 072A  6E15     MOVWF 0x15, ACCESS
 072C  0E68     MOVLW 0x68
 072E  6E14     MOVWF 0x14, ACCESS
-406:           
-407:           	L[2].strobe = 40000;
+409:           
+410:           	L[2].strobe = 40000;
 0730  0E9C     MOVLW 0x9C
 0732  6E1C     MOVWF 0x1C, ACCESS
 0734  0E40     MOVLW 0x40
 0736  6E1B     MOVWF 0x1B, ACCESS
-408:           	L[2].sequence.B = 1;
+411:           	L[2].sequence.B = 1;
 0738  8618     BSF 0x18, 3, ACCESS
-409:           	L[2].sequence.offset = strobe_around;
+412:           	L[2].sequence.offset = strobe_around;
 073A  0E04     MOVLW 0x4
 073C  6E1A     MOVWF 0x1A, ACCESS
 073E  0E38     MOVLW 0x38
 0740  6E19     MOVWF 0x19, ACCESS
-410:           
-411:           	L[3].strobe = 30000;
+413:           
+414:           	L[3].strobe = 30000;
 0742  0E75     MOVLW 0x75
 0744  6E21     MOVWF 0x21, ACCESS
 0746  0E30     MOVLW 0x30
 0748  6E20     MOVWF 0x20, ACCESS
-412:           	L[3].sequence.R = 1;
+415:           	L[3].sequence.R = 1;
 074A  821D     BSF 0x1D, 1, ACCESS
-413:           	L[3].sequence.G = 1;
+416:           	L[3].sequence.G = 1;
 074C  841D     BSF 0x1D, 2, ACCESS
-414:           	L[3].sequence.B = 1;
+417:           	L[3].sequence.B = 1;
 074E  861D     BSF 0x1D, 3, ACCESS
-415:           	L[3].sequence.offset = 0;
+418:           	L[3].sequence.offset = 0;
 0750  0E00     MOVLW 0x0
 0752  6E1F     MOVWF 0x1F, ACCESS
 0754  0E00     MOVLW 0x0
 0756  6E1E     MOVWF 0x1E, ACCESS
-416:           	L[3].sequence.end = 1;
+419:           	L[3].sequence.end = 1;
 0758  881D     BSF 0x1D, 4, ACCESS
-417:           
-418:           	L[strobe_max - 1].sequence.end = 1;
+420:           
+421:           	L[strobe_max - 1].sequence.end = 1;
 075A  8859     BSF 0x59, 4, ACCESS
 075C  0012     RETURN 0
-419:           	return 0;
-420:           }
-421:           
-422:           void main(void)
-423:           {
-424:           	init_rmsmon();
+422:           	return 0;
+423:           }
+424:           
+425:           void main(void)
+426:           {
+427:           	init_rmsmon();
 0C2C  EC04     CALL 0x808, 0
 0C2E  F004     NOP
-425:           
-426:           	/* Loop forever */
-427:           	while (TRUE) { // busy work
+428:           
+429:           	/* Loop forever */
+430:           	while (TRUE) { // busy work
 0C34  D7FD     BRA 0xC30
-428:           		sw_work(); // run housekeeping
+431:           		sw_work(); // run housekeeping
 0C30  ECB3     CALL 0x366, 0
 0C32  F001     NOP
 0C34  D7FD     BRA 0xC30
-429:           	}
-430:           }
+432:           	}
+433:           }
 ---  /opt/microchip/xc8/v1.44/sources/common/memset.c  --------------------------------------------------
 1:             #include	<string.h>
 2:             

@@ -222,7 +222,10 @@ int16_t sw_work(void)
 		LED1 = 1;
 	}
 
-	/* command state machine */
+	/* command state machine 
+	 * u update the current display buffer with remote rs232 data
+	 * d display the current display buffer with rs232 data
+	 */
 	if (!ringBufS_empty(&ring_buf1)) {
 		rx_data = ringBufS_get(&ring_buf1);
 		switch (V.comm_state) {
