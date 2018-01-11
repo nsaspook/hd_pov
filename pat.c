@@ -216,6 +216,7 @@ int16_t sw_work(void)
 		uint8_t L_bytes[sizeof(L[0]) + 1];
 		L_data L_tmp;
 	} L_union;
+	int16_t ret = 0;
 
 	ClrWdt(); // reset watchdog
 
@@ -263,6 +264,7 @@ int16_t sw_work(void)
 			default:
 				USART_putsr("\r\n NAK_I");
 				LED1 = 0;
+				ret = -1;
 				break;
 			}
 			break;
@@ -275,6 +277,7 @@ int16_t sw_work(void)
 				USART_putsr(" NAK_D");
 				V.comm_state = APP_STATE_INIT;
 				LED1 = 0;
+				ret = -1;
 				break;
 			}
 			offset = 0;
@@ -331,11 +334,12 @@ int16_t sw_work(void)
 			if (ringBufS_full(&ring_buf1))
 				ringBufS_flush(&ring_buf1, 0);
 			LED1 = 0;
+			ret = -1;
 			break;
 		}
 	}
 
-	return 0;
+	return ret;
 }
 
 void init_rmsmon(void)
