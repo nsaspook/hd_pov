@@ -199,6 +199,13 @@ void USART_putsr(const uint8_t *s)
 	}
 }
 
+void puts_ok(uint16_t size)
+{
+	itoa(str, size, 10);
+	USART_putsr("\r\n OK");
+	USART_puts(str); // send size of data array
+}
+
 /* main loop routine */
 int16_t sw_work(void)
 {
@@ -235,16 +242,23 @@ int16_t sw_work(void)
 			case 'U':
 				LED1 = 1;
 				V.comm_state = APP_STATE_WAIT_FOR_UDATA;
-				itoa(str, sizeof(L_union.L_tmp), 10);
-				USART_putsr("\r\n OK");
-				USART_puts(str); // send size of data array
+				puts_ok(V.l_size); // ok each valid command
 				break;
 			case 'd':
 			case 'D':
 				V.comm_state = APP_STATE_WAIT_FOR_DDATA;
-				itoa(str, sizeof(L_union.L_tmp), 10);
-				USART_putsr("\r\n OK");
-				USART_puts(str); // send size of data array
+				puts_ok(V.l_size);
+				break;
+			case 'e':
+				V.comm_state = APP_STATE_WAIT_FOR_eDATA;
+				puts_ok(V.l_size);
+				break;
+			case 'E':
+				V.comm_state = APP_STATE_WAIT_FOR_EDATA;
+				puts_ok(V.l_size);
+				break;
+			case 'z':
+			case 'Z': // null command for fillers, silent
 				break;
 			default:
 				USART_putsr("\r\n NAK_I");
@@ -252,6 +266,8 @@ int16_t sw_work(void)
 				break;
 			}
 			break;
+		case APP_STATE_WAIT_FOR_eDATA:
+		case APP_STATE_WAIT_FOR_EDATA:
 		case APP_STATE_WAIT_FOR_DDATA:
 		case APP_STATE_WAIT_FOR_UDATA:
 			position = rx_data;
@@ -262,11 +278,23 @@ int16_t sw_work(void)
 				break;
 			}
 			offset = 0;
-			if (V.comm_state == APP_STATE_WAIT_FOR_UDATA)
+			switch (V.comm_state) {
+			case APP_STATE_WAIT_FOR_UDATA:
 				V.comm_state = APP_STATE_WAIT_FOR_RDATA;
-			if (V.comm_state == APP_STATE_WAIT_FOR_DDATA) {
-				L_tmp_ptr = (void*) &L[position]; // set to array position to read
+				break;
+			case APP_STATE_WAIT_FOR_DDATA:
 				V.comm_state = APP_STATE_WAIT_FOR_SDATA;
+				break;
+			case APP_STATE_WAIT_FOR_eDATA:
+				L[position].sequence.end = 0; // clear end flag
+				V.comm_state = APP_STATE_WAIT_FOR_SDATA;
+				break;
+			case APP_STATE_WAIT_FOR_EDATA:
+				L[position].sequence.end = 1; // set end flag
+				V.comm_state = APP_STATE_WAIT_FOR_SDATA;
+				break;
+			default:
+				break;
 			}
 			USART_putsr(" OK");
 			break;
@@ -281,7 +309,8 @@ int16_t sw_work(void)
 			}
 			break;
 		case APP_STATE_WAIT_FOR_SDATA: // send
-			do {
+			L_tmp_ptr = (void*) &L[position]; // set array start position
+			do { // send ascii data to the rs232 port
 				USART_putsr(" ,");
 				if (offset) {
 					itoa(str, *L_tmp_ptr, 16); // show hex
@@ -291,7 +320,7 @@ int16_t sw_work(void)
 				USART_puts(str);
 				L_tmp_ptr++;
 				offset++;
-			} while (offset < sizeof(L_union.L_tmp));
+			} while (offset < V.l_size);
 			V.comm_state = APP_STATE_INIT;
 			USART_putsr(" OK");
 			LED1 = 0;
@@ -385,6 +414,7 @@ uint8_t init_rms_params(void)
 	V.comm_state = 0;
 	V.line_num = 0;
 	V.comm_state = APP_STATE_INIT;
+	V.l_size = sizeof(L[0]);
 
 	USART_putsr("\r\nVersion ");
 	USART_putsr(versions);

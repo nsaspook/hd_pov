@@ -25,6 +25,8 @@ typedef enum {
 	APP_STATE_WAIT_FOR_RDATA,
 	APP_STATE_WAIT_FOR_DDATA,
 	APP_STATE_WAIT_FOR_SDATA,
+	APP_STATE_WAIT_FOR_eDATA,
+	APP_STATE_WAIT_FOR_EDATA,
 	/* Application Error state*/
 	APP_STATE_ERROR
 
@@ -39,7 +41,7 @@ typedef struct V_data { // ISR data structure
 	uint8_t line_num : 2;
 	uint8_t c_line_num : 2;
 	uint8_t rx_data, tx_data;
-	uint16_t rotations, sequences, patterns;
+	uint16_t rotations, sequences, patterns, l_size;
 } V_data;
 
 typedef struct L_seq {
