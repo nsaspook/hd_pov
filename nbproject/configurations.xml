@@ -23,6 +23,7 @@
                    projectFiles="false">
       <itemPath>Makefile</itemPath>
       <itemPath>../pic18f1320.pdf</itemPath>
+      <itemPath>comms</itemPath>
     </logicalFolder>
   </logicalFolder>
   <projectmakefile>Makefile</projectmakefile>

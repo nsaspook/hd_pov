@@ -258,6 +258,13 @@ int16_t sw_work(void)
 				V.comm_state = APP_STATE_WAIT_FOR_EDATA;
 				puts_ok(V.l_size);
 				break;
+			case 'i':
+			case 'I': // info command
+				USART_putsr(" Timer limit, ");
+				itoa(str, l_full, 10);
+				USART_puts(str);
+				USART_putsr(", OK");
+				break;
 			case 'z':
 			case 'Z': // null command for fillers, silent
 				break;
