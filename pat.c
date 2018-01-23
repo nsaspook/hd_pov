@@ -85,6 +85,7 @@ void interrupt high_priority tm_handler(void) // timer/serial functions are hand
 	if (INTCONbits.INT0IF) { // Hall effect index signal, start of rotation
 		INTCONbits.INT0IF = FALSE;
 		RPMLED = (uint8_t)!RPMLED;
+		LED1 = 1;
 		if (l_state == 1) { // off state too long for full rotation, hall signal while in state 1
 			l_full += strobe_adjust; // off state lower limit adjustments for smooth strobe rotation
 		}
@@ -142,6 +143,7 @@ void interrupt high_priority tm_handler(void) // timer/serial functions are hand
 			}
 
 			l_state = 2; // on start time duration for strobe pulse
+			LED1 = 0;
 			break;
 		case 2:
 			WRITETIMER1(l_complete);
@@ -220,6 +222,9 @@ int16_t sw_work(void)
 
 	ClrWdt(); // reset watchdog
 
+	if (l_state < 2)
+		ret = -1;
+
 	if (!SW1) {
 		USART_putsr("\r\nTimer limit ");
 		itoa(str, l_full, 10);
@@ -227,7 +232,6 @@ int16_t sw_work(void)
 		USART_putsr("Timer value ");
 		itoa(str, L_ptr->strobe, 10);
 		USART_puts(str);
-		LED1 = 1;
 	}
 
 	/* command state machine 
@@ -241,14 +245,11 @@ int16_t sw_work(void)
 			switch (rx_data) {
 			case 'u':
 			case 'U':
-				LED1 = 1;
 				V.comm_state = APP_STATE_WAIT_FOR_UDATA;
-				puts_ok(V.l_size); // ok each valid command
 				break;
 			case 'd':
 			case 'D':
 				V.comm_state = APP_STATE_WAIT_FOR_DDATA;
-				puts_ok(V.l_size);
 				break;
 			case 'e':
 				V.comm_state = APP_STATE_WAIT_FOR_eDATA;
@@ -270,7 +271,6 @@ int16_t sw_work(void)
 				break;
 			default:
 				USART_putsr("\r\n NAK_I");
-				LED1 = 0;
 				ret = -1;
 				break;
 			}
@@ -283,7 +283,6 @@ int16_t sw_work(void)
 			if (position >= strobe_max) {
 				USART_putsr(" NAK_D");
 				V.comm_state = APP_STATE_INIT;
-				LED1 = 0;
 				ret = -1;
 				break;
 			}
@@ -321,7 +320,6 @@ int16_t sw_work(void)
 				INTCONbits.GIEH = 1;
 				V.comm_state = APP_STATE_INIT;
 				USART_putsr(" OK");
-				LED1 = 0;
 			}
 			break;
 		case APP_STATE_WAIT_FOR_SDATA: // send
@@ -339,14 +337,12 @@ int16_t sw_work(void)
 			} while (offset < V.l_size);
 			V.comm_state = APP_STATE_INIT;
 			USART_putsr(" OK");
-			LED1 = 0;
 			break;
 		default:
 			USART_putsr(" NAK_C");
 			V.comm_state = APP_STATE_INIT;
 			if (ringBufS_full(&ring_buf1))
 				ringBufS_flush(&ring_buf1, 0);
-			LED1 = 0;
 			ret = -1;
 			break;
 		}
