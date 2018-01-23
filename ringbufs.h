@@ -19,7 +19,7 @@ extern "C" {
 	typedef signed long long int64_t;
 
 
-#define RBUF_SIZE    16u
+#define RBUF_SIZE    32u
 
 	typedef struct ringBufS_t {
 		uint8_t buf[RBUF_SIZE];

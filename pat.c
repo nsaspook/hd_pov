@@ -296,11 +296,15 @@ int16_t sw_work(void)
 				V.comm_state = APP_STATE_WAIT_FOR_SDATA;
 				break;
 			case APP_STATE_WAIT_FOR_eDATA:
+				INTCONbits.GIEH = 0;
 				L[position].sequence.end = 0; // clear end flag
+				INTCONbits.GIEH = 1;
 				V.comm_state = APP_STATE_WAIT_FOR_SDATA;
 				break;
 			case APP_STATE_WAIT_FOR_EDATA:
+				INTCONbits.GIEH = 0;
 				L[position].sequence.end = 1; // set end flag
+				INTCONbits.GIEH = 1;
 				V.comm_state = APP_STATE_WAIT_FOR_SDATA;
 				break;
 			default:
@@ -312,7 +316,9 @@ int16_t sw_work(void)
 			L_union.L_bytes[offset] = rx_data;
 			offset++;
 			if (offset >= sizeof(L_union.L_tmp)) {
+				INTCONbits.GIEH = 0;
 				L[position] = L_union.L_tmp;
+				INTCONbits.GIEH = 1;
 				V.comm_state = APP_STATE_INIT;
 				USART_putsr(" OK");
 				LED1 = 0;
