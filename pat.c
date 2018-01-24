@@ -12,7 +12,7 @@
 // BORV = No Setting
 
 // CONFIG2H
-#pragma config WDT = ON        // Watchdog Timer Enable bit 
+#pragma config WDT = OFF        // Watchdog Timer Enable bit 
 #pragma config WDTPS = 4096    // Watchdog Timer Postscale Select bits 
 
 // CONFIG3H
@@ -55,6 +55,7 @@
  * 1.2 cleanup state machine and data logic
  * 1.3 add routines for remote configuration of strobes
  * 1.4 add buffering for rs232
+ * 1.5 cleanup remote data handling
  */
 
 #include  <xc.h>
@@ -78,7 +79,7 @@ volatile uint16_t l_full = strobe_limit_l, l_width = strobe_line, l_complete = s
 struct ringBufS_t ring_buf1;
 
 const uint8_t build_date[] = __DATE__, build_time[] = __TIME__;
-const uint8_t versions[] = "1.4";
+const uint8_t versions[] = "1.5";
 
 void interrupt high_priority tm_handler(void) // timer/serial functions are handled here
 {
@@ -126,6 +127,7 @@ void interrupt high_priority tm_handler(void) // timer/serial functions are hand
 		switch (l_state) {
 		case 0:
 			WRITETIMER1(L_ptr->strobe); // strobe positioning during rotation
+			T1CONbits.TMR1ON=1;
 			G_OUT = 0;
 			R_OUT = 0;
 			B_OUT = 0;
@@ -146,13 +148,8 @@ void interrupt high_priority tm_handler(void) // timer/serial functions are hand
 			LED1 = 0;
 			break;
 		case 2:
-			WRITETIMER1(l_complete);
-			G_OUT = 0; // wait to next rotation
-			R_OUT = 0;
-			B_OUT = 0;
-			break;
 		default:
-			WRITETIMER1(l_complete);
+			T1CONbits.TMR1ON=0;
 			G_OUT = 0;
 			R_OUT = 0;
 			B_OUT = 0;
@@ -167,7 +164,6 @@ void interrupt high_priority tm_handler(void) // timer/serial functions are hand
 			RCSTAbits.CREN = 1; // re-enable
 		}
 		ringBufS_put(&ring_buf1, V.rx_data);
-		V.comm = TRUE;
 	}
 
 
@@ -220,7 +216,7 @@ int16_t sw_work(void)
 	} L_union;
 	int16_t ret = 0;
 
-	ClrWdt(); // reset watchdog
+//	ClrWdt(); // reset watchdog
 
 	if (l_state < 2)
 		ret = -1;
@@ -423,7 +419,6 @@ uint8_t init_rms_params(void)
 {
 	V.spinning = FALSE;
 	V.valid = TRUE;
-	V.comm = FALSE;
 	V.comm_state = 0;
 	V.line_num = 0;
 	V.comm_state = APP_STATE_INIT;

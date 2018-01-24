@@ -19,51 +19,50 @@ typedef signed long long int64_t;
 #endif
 
 typedef enum {
-	/* rs232 Application's state machine's initial state. */
-	APP_STATE_INIT = 0,
-	APP_STATE_WAIT_FOR_UDATA,
-	APP_STATE_WAIT_FOR_RDATA,
-	APP_STATE_WAIT_FOR_DDATA,
-	APP_STATE_WAIT_FOR_SDATA,
-	APP_STATE_WAIT_FOR_eDATA,
-	APP_STATE_WAIT_FOR_EDATA,
-	/* Application Error state*/
-	APP_STATE_ERROR
+    /* rs232 Application's state machine's initial state. */
+    APP_STATE_INIT = 0,
+    APP_STATE_WAIT_FOR_UDATA,
+    APP_STATE_WAIT_FOR_RDATA,
+    APP_STATE_WAIT_FOR_DDATA,
+    APP_STATE_WAIT_FOR_SDATA,
+    APP_STATE_WAIT_FOR_eDATA,
+    APP_STATE_WAIT_FOR_EDATA,
+    /* Application Error state*/
+    APP_STATE_ERROR
 
 } APP_STATES;
 
 typedef struct V_data { // ISR data structure
-	uint8_t valid : 1;
-	uint8_t comm : 1;
-	APP_STATES comm_state;
-	uint8_t spinning : 1;
-	uint8_t boot_code : 1;
-	uint8_t line_num : 2;
-	uint8_t c_line_num : 2;
-	uint8_t rx_data, tx_data;
-	uint16_t rotations, sequences, patterns, l_size;
+    uint8_t valid : 1;
+    APP_STATES comm_state;
+    uint8_t spinning : 1;
+    uint8_t boot_code : 1;
+    uint8_t line_num : 2;
+    uint8_t c_line_num : 2;
+    uint8_t rx_data, tx_data;
+    uint16_t rotations, sequences, patterns, l_size;
 } V_data;
 
 typedef struct L_seq {
-	uint8_t down : 1; // rotation direction
-	uint8_t R : 1;
-	uint8_t G : 1;
-	uint8_t B : 1;
-	uint8_t end : 1; // last line in sequence
-	uint8_t skip : 1; // don't light led
-	uint16_t offset; // line movement 
+    uint8_t down : 1; // rotation direction
+    uint8_t R : 1;
+    uint8_t G : 1;
+    uint8_t B : 1;
+    uint8_t end : 1; // last line in sequence
+    uint8_t skip : 1; // don't light led
+    uint16_t offset; // line movement 
 };
 
 /* data for one complete rotation*/
 typedef struct L_data {
-	struct L_seq sequence;
-	uint16_t strobe;
+    struct L_seq sequence;
+    uint16_t strobe;
 } L_data;
 
 #define TRUE	1
 #define FALSE	0
-#define	ON	1
-#define	OFF	0
+#define	ON      1
+#define	OFF     0
 #define	LEDON	0   // logic low lights led
 #define	LEDOFF	1
 
@@ -88,7 +87,7 @@ typedef struct L_data {
 #define B_OUT		LATAbits.LATA2
 #define TACHIN		LATBbits.LATB0
 #define RPMLED		LATBbits.LATB5
-#define SW1		PORTAbits.RA4
+#define SW1         PORTAbits.RA4
 
 #define PAT2		// display patterns
 
@@ -107,8 +106,8 @@ typedef struct L_data {
 
 #define strobe_adjust	11
 #define strobe_limit_l	24250 // this limit is calc'd from the rs-232 port
-#define strobe_limit_h	65530
+#define strobe_limit_h	65534
 #define strobe_line	64900 // line width timer count
-#define strobe_complete	10000 // end of rotation timer count
+#define strobe_complete	1000 // end of rotation timer count
 #define strobe_max	16
 #endif 
