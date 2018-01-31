@@ -314,7 +314,7 @@ int16_t sw_work(void)
 				INTCONbits.GIEH = 0;
 				L[position] = L_union.L_tmp;
 				INTCONbits.GIEH = 1;
-				itoa(str, (uint16_t) L_union.L_tmp.strobe, 10);
+				utoa(str, (uint16_t) L_union.L_tmp.strobe, 10);
 				USART_puts(str);
 				V.comm_state = APP_STATE_INIT;
 				USART_putsr(" OK");
