@@ -19,44 +19,45 @@ typedef signed long long int64_t;
 #endif
 
 typedef enum {
-    /* rs232 Application's state machine's initial state. */
-    APP_STATE_INIT = 0,
-    APP_STATE_WAIT_FOR_UDATA,
-    APP_STATE_WAIT_FOR_RDATA,
-    APP_STATE_WAIT_FOR_DDATA,
-    APP_STATE_WAIT_FOR_SDATA,
-    APP_STATE_WAIT_FOR_eDATA,
-    APP_STATE_WAIT_FOR_EDATA,
-    /* Application Error state*/
-    APP_STATE_ERROR
+	/* rs232 Application's state machine's initial state. */
+	APP_STATE_INIT = 0,
+	APP_STATE_WAIT_FOR_UDATA,
+	APP_STATE_WAIT_FOR_RDATA,
+	APP_STATE_WAIT_FOR_DDATA,
+	APP_STATE_WAIT_FOR_SDATA,
+	APP_STATE_WAIT_FOR_eDATA,
+	APP_STATE_WAIT_FOR_EDATA,
+	/* Application Error state*/
+	APP_STATE_ERROR
 
 } APP_STATES;
 
 typedef struct V_data { // ISR data structure
-    uint8_t valid : 1;
-    APP_STATES comm_state;
-    uint8_t spinning : 1;
-    uint8_t boot_code : 1;
-    uint8_t line_num : 2;
-    uint8_t c_line_num : 2;
-    uint8_t rx_data, tx_data;
-    uint16_t rotations, sequences, patterns, l_size;
+	uint8_t valid : 1;
+	APP_STATES comm_state;
+	uint8_t spinning : 1;
+	uint8_t boot_code : 1;
+	uint8_t line_num : 2;
+	uint8_t c_line_num : 2;
+	uint8_t at_end : 1;
+	uint8_t rx_data, tx_data;
+	uint16_t rotations, sequences, patterns, l_size;
 } V_data;
 
 typedef struct L_seq {
-    uint8_t down : 1; // rotation direction
-    uint8_t R : 1;
-    uint8_t G : 1;
-    uint8_t B : 1;
-    uint8_t end : 1; // last line in sequence
-    uint8_t skip : 1; // don't light led
-    uint16_t offset; // line movement 
+	uint8_t down : 1; // rotation direction
+	uint8_t R : 1;
+	uint8_t G : 1;
+	uint8_t B : 1;
+	uint8_t end : 1; // last line in sequence
+	uint8_t skip : 1; // don't light led
+	uint16_t offset; // line movement 
 };
 
 /* data for one complete rotation*/
 typedef struct L_data {
-    struct L_seq sequence;
-    uint16_t strobe;
+	struct L_seq sequence;
+	uint16_t strobe;
 } L_data;
 
 #define TRUE	1
