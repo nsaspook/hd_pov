@@ -39,7 +39,6 @@ typedef struct V_data { // ISR data structure
 	uint8_t boot_code : 1;
 	uint8_t line_num : 2;
 	uint8_t c_line_num : 2;
-	uint8_t at_end : 1;
 	uint8_t rx_data, tx_data;
 	uint16_t rotations, sequences, patterns, l_size;
 } V_data;

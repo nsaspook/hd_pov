@@ -118,7 +118,6 @@ void interrupt high_priority tm_handler(void) // timer/serial functions are hand
 		if (L_ptr->sequence.end || (V.line_num >= strobe_max)) { // rollover for sequence patterns
 			V.line_num = 0;
 			V.sequences++;
-			V.at_end = 1;
 		}
 	}
 
@@ -223,10 +222,10 @@ int16_t sw_work(void)
 		ret = -1;
 
 	if (!SW1) {
-		USART_putsr("\r\nTimer limit ");
+		USART_putsr("\r\n Timer limit,");
 		itoa(str, l_full, 10);
 		USART_puts(str);
-		USART_putsr("Timer value ");
+		USART_putsr(" Timer value,");
 		itoa(str, L_ptr->strobe, 10);
 		USART_puts(str);
 	}
@@ -258,20 +257,17 @@ int16_t sw_work(void)
 				break;
 			case 'i':
 			case 'I': // info command
-				USART_putsr(" Timer limit, ");
+				USART_putsr(" Timer limit,");
 				itoa(str, l_full, 10);
 				USART_puts(str);
-				USART_putsr(", OK");
-				V.comm_state = APP_STATE_INIT;
+				USART_putsr(" OK");
 				break;
 			case 'z':
 			case 'Z': // null command for fillers, silent
-				V.comm_state = APP_STATE_INIT;
 				break;
 			default:
 				USART_putsr("\r\n NAK_I");
 				ret = -1;
-				V.comm_state = APP_STATE_INIT;
 				break;
 			}
 			break;
@@ -319,10 +315,11 @@ int16_t sw_work(void)
 				L[position] = L_union.L_tmp;
 				INTCONbits.INT0IF = FALSE;
 				INTCONbits.GIEH = 1;
+				USART_putsr(" OK,");
 				utoa(str, (uint16_t) L_union.L_tmp.strobe, 10);
 				USART_puts(str);
 				V.comm_state = APP_STATE_INIT;
-				USART_putsr(" OK");
+
 
 			}
 			break;
@@ -429,7 +426,6 @@ uint8_t init_rms_params(void)
 	V.valid = TRUE;
 	V.comm_state = 0;
 	V.line_num = 0;
-	V.at_end = 0;
 	V.comm_state = APP_STATE_INIT;
 	V.l_size = sizeof(L[0]);
 
