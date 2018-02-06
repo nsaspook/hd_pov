@@ -63,6 +63,7 @@
 #include  <xc.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <stdint.h>
 #include "pat.h"
 #include <string.h>
 #include "ringbufs.h"
@@ -70,9 +71,6 @@
 int16_t sw_work(void);
 void init_rmsmon(void);
 uint8_t init_rms_params(void);
-
-/* global string buffer */
-
 
 near struct V_data V = {0};
 near volatile struct L_data L[strobe_max] = {0}, *L_ptr;
@@ -376,14 +374,14 @@ void init_rmsmon(void)
 	RMSPORTA = RMSPORT_IOA;
 	RMSPORTB = RMSPORT_IOB;
 
-	G_OUT = LEDON; // preset all LEDS
-	LED1 = LEDON;
-	LED2 = LEDON;
-	LED3 = LEDON;
-	LED4 = LEDON;
-	LED5 = LEDON;
-	LED6 = LEDON;
-	RPMLED = LEDON;
+	G_OUT = OFF; // preset all LEDS
+	LED1 = OFF;
+	LED2 = OFF;
+	LED3 = OFF;
+	LED4 = OFF;
+	LED5 = OFF;
+	LED6 = OFF;
+	RPMLED = OFF;
 	//	OpenTimer0(TIMER_INT_ON & T0_16BIT & T0_SOURCE_INT & T0_PS_1_256); // led blinker
 	T0CON = 0b10000111;
 	WRITETIMER0(TIMEROFFSET); //	start timer0 at ~1/2 second ticks

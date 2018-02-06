@@ -1,22 +1,5 @@
 #ifndef PAT_H_INCLUDED
-#define PAT_H_INCLUDED
-//	hardware defines 
-
-#ifdef INTTYPES
-#include <stdint.h>
-#else
-#define INTTYPES
-/*unsigned types*/
-typedef unsigned char uint8_t;
-typedef unsigned short int uint16_t;
-typedef unsigned long uint32_t;
-typedef unsigned long long uint64_t;
-/*signed types*/
-typedef signed char int8_t;
-typedef signed short int int16_t;
-typedef signed long int32_t;
-typedef signed long long int64_t;
-#endif
+#define PAT_H_INCLUDED 
 
 typedef enum {
 	/* rs232 Application's state machine's initial state. */
@@ -33,6 +16,7 @@ typedef enum {
 } APP_STATES;
 
 typedef enum {
+	/* rotation state machine */
 	ISR_STATE_FLAG = 0,
 	ISR_STATE_LINE,
 	ISR_STATE_WAIT,
@@ -74,9 +58,8 @@ typedef struct L_data {
 #define FALSE	0
 #define	ON      1
 #define	OFF     0
-#define	LEDON	0   // logic low lights led
-#define	LEDOFF	1
 
+//	hardware defines
 #define RMSPORTA	TRISA
 #define RMSPORTB	TRISB
 #define RMSPORT_IOA	0b00010000		// SW1 input RA4
@@ -112,6 +95,7 @@ typedef struct L_data {
 #define strobe_around	1080
 #endif
 
+/* rotation parms for 40mHZ PIC18f1320 */
 #define strobe_adjust	11
 #define strobe_limit_l	24250 // this limit is calc'd from the rs-232 port
 #define strobe_limit_h	65534
