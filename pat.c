@@ -57,6 +57,7 @@
  * 1.4 add buffering for rs232
  * 1.5 cleanup remote data handling
  * 1.6 Beta version
+ * 1.7 release cleanup
  */
 
 #include  <xc.h>
@@ -70,18 +71,17 @@ int16_t sw_work(void);
 void init_rmsmon(void);
 uint8_t init_rms_params(void);
 
-uint8_t str[24];
-near volatile struct L_data *L_ptr;
-near volatile struct V_data V = {0};
-near volatile struct L_data L[strobe_max] = {0};
+/* global string buffer */
 
-//uint16_t timer0_off = TIMEROFFSET, timer1_off = SAMPLEFREQ;
+
+near struct V_data V = {0};
+near volatile struct L_data L[strobe_max] = {0}, *L_ptr;
+
+/* rs233 command buffer */
 struct ringBufS_t ring_buf1;
 
-const uint8_t build_date[] = __DATE__, build_time[] = __TIME__;
-const uint8_t versions[] = "1.6";
-const uint16_t TIMEROFFSET = 18000;
-const uint16_t TIMERDEF = 60000;
+const uint8_t build_date[] = __DATE__, build_time[] = __TIME__, versions[] = "1.7";
+const uint16_t TIMEROFFSET = 18000, TIMERDEF = 60000;
 
 void interrupt high_priority tm_handler(void) // timer/serial functions are handled here
 {
@@ -201,9 +201,9 @@ void USART_putsr(const uint8_t *s)
 
 void puts_ok(uint16_t size)
 {
-	itoa(str, size, 10);
+	itoa(V.str, size, 10);
 	USART_putsr("\r\n OK");
-	USART_puts(str); // send size of data array
+	USART_puts(V.str); // send size of data array
 }
 
 /* main loop routine */
@@ -225,11 +225,11 @@ int16_t sw_work(void)
 
 	if (!SW1) {
 		USART_putsr("\r\n Timer limit,");
-		itoa(str, V.l_full, 10);
-		USART_puts(str);
+		itoa(V.str, V.l_full, 10);
+		USART_puts(V.str);
 		USART_putsr(" Timer value,");
-		itoa(str, L_ptr->strobe, 10);
-		USART_puts(str);
+		itoa(V.str, L_ptr->strobe, 10);
+		USART_puts(V.str);
 	}
 
 	/* command state machine 
@@ -260,8 +260,8 @@ int16_t sw_work(void)
 			case 'i':
 			case 'I': // info command
 				USART_putsr(" Timer limit,");
-				itoa(str, V.l_full, 10);
-				USART_puts(str);
+				itoa(V.str, V.l_full, 10);
+				USART_puts(V.str);
 				USART_putsr(" OK");
 				break;
 			case 'z':
@@ -279,7 +279,7 @@ int16_t sw_work(void)
 		case APP_STATE_WAIT_FOR_UDATA:
 			position = rx_data;
 			if (position >= strobe_max) {
-				USART_putsr(" NAK_D");
+				USART_putsr(" NAK_P");
 				V.comm_state = APP_STATE_INIT;
 				ret = -1;
 				break;
@@ -318,8 +318,8 @@ int16_t sw_work(void)
 				INTCONbits.INT0IF = FALSE;
 				INTCONbits.GIEH = 1;
 				USART_putsr(" OK,");
-				utoa(str, (uint16_t) L_union.L_tmp.strobe, 10);
-				USART_puts(str);
+				utoa(V.str, (uint16_t) L_union.L_tmp.strobe, 10);
+				USART_puts(V.str);
 				V.comm_state = APP_STATE_INIT;
 
 
@@ -330,11 +330,11 @@ int16_t sw_work(void)
 			do { // send ascii data to the rs232 port
 				USART_putsr(" ,");
 				if (offset) {
-					itoa(str, *L_tmp_ptr, 16); // show hex
+					itoa(V.str, *L_tmp_ptr, 16); // show hex
 				} else {
-					itoa(str, *L_tmp_ptr, 2); // show bits
+					itoa(V.str, *L_tmp_ptr, 2); // show bits
 				}
-				USART_puts(str);
+				USART_puts(V.str);
 				L_tmp_ptr++;
 				offset++;
 			} while (offset < V.l_size);
@@ -437,8 +437,8 @@ uint8_t init_rms_params(void)
 	USART_putsr("\r\nVersion ");
 	USART_putsr(versions);
 	USART_putsr(", ");
-	itoa(str, sizeof(L[0]), 10);
-	USART_puts(str);
+	itoa(V.str, sizeof(L[0]), 10);
+	USART_puts(V.str);
 	USART_putsr(", ");
 	USART_putsr(build_date);
 	USART_putsr(", ");
