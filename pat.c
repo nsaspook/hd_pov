@@ -84,10 +84,10 @@ const uint16_t TIMEROFFSET = 18000, TIMERDEF = 60000;
 
 void interrupt high_priority tm_handler(void) // timer/serial functions are handled here
 {
+	LED1 = 1;
 	if (INTCONbits.INT0IF) { // Hall effect index signal, start of rotation
 		INTCONbits.INT0IF = false;
 		RPMLED = (uint8_t)!RPMLED;
-		LED1 = 1;
 		if (V.l_state == ISR_STATE_LINE) { // off state too long for full rotation, hall signal while in state 1
 			V.l_full += strobe_adjust; // off state lower limit adjustments for smooth strobe rotation
 		}
@@ -146,7 +146,6 @@ void interrupt high_priority tm_handler(void) // timer/serial functions are hand
 			}
 
 			V.l_state = ISR_STATE_WAIT; // on start time duration for strobe pulse
-			LED1 = 0;
 			break;
 		case ISR_STATE_WAIT:
 		default:
@@ -173,7 +172,7 @@ void interrupt high_priority tm_handler(void) // timer/serial functions are hand
 		WRITETIMER0(TIMEROFFSET);
 		LED5 = (uint8_t)!LED5; // active LED blinker
 	}
-
+	LED1 = 0;
 }
 
 void USART_putc(uint8_t c)
@@ -231,7 +230,7 @@ int16_t sw_work(void)
 
 	/* command state machine 
 	 * u update the current display buffer with remote rs232 data
-	 * d display the current display buffer with rs232 data
+	 * d display the current display buffer on rs232 port
 	 */
 	if (!ringBufS_empty(&ring_buf1)) {
 		rx_data = ringBufS_get(&ring_buf1);
@@ -405,6 +404,7 @@ void init_rmsmon(void)
 	IPR1bits.TMR1IP = 1;
 
 	INTCONbits.INT0IE = 1; // enable RPM sensor input
+	INTCON2bits.INTEDG0 = 0; // falling edge trigger
 	INTCON2bits.RBPU = 0; // enable weak pull-ups
 
 	PIE1bits.RCIE = 1; // enable rs232 serial receive interrupts

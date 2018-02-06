@@ -93,7 +93,7 @@ typedef struct L_data {
 #define strobe_around	1080
 #endif
 
-/* rotation parms for 40mHZ PIC18f1320 */
+/* rotation params for 40mHZ PIC18f1320 */
 #define strobe_adjust	11
 #define strobe_limit_l	24250 // this limit is calc'd from the rs-232 port
 #define strobe_limit_h	65534
