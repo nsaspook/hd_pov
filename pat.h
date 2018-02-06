@@ -32,15 +32,24 @@ typedef enum {
 
 } APP_STATES;
 
-typedef struct V_data { // ISR data structure
+typedef enum {
+	ISR_STATE_FLAG = 0,
+	ISR_STATE_LINE,
+	ISR_STATE_WAIT,
+	ISR_STATE_ERROR
+
+} ISR_STATES;
+
+typedef struct V_data { // ISR control data structure
 	uint8_t valid : 1;
 	APP_STATES comm_state;
 	uint8_t spinning : 1;
 	uint8_t boot_code : 1;
 	uint8_t line_num : 2;
 	uint8_t c_line_num : 2;
-	uint8_t rx_data, tx_data;
+	uint8_t rx_data, tx_data, l_state;
 	uint16_t rotations, sequences, patterns, l_size;
+	uint16_t l_full, l_width;
 } V_data;
 
 typedef struct L_seq {
@@ -66,9 +75,6 @@ typedef struct L_data {
 #define	LEDON	0   // logic low lights led
 #define	LEDOFF	1
 
-#define	TIMEROFFSET	18000		// timer0 16bit counter value for ~1 second to overflow 44268
-#define	SAMPLEFREQ	60000		// timer1 default value
-
 #define RMSPORTA	TRISA
 #define RMSPORTB	TRISB
 #define RMSPORT_IOA	0b00010000		// SW1 input RA4
@@ -87,7 +93,7 @@ typedef struct L_data {
 #define B_OUT		LATAbits.LATA2
 #define TACHIN		LATBbits.LATB0
 #define RPMLED		LATBbits.LATB5
-#define SW1         PORTAbits.RA4
+#define SW1		PORTAbits.RA4
 
 #define PAT2		// display patterns
 

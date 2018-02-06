@@ -73,14 +73,15 @@ uint8_t init_rms_params(void);
 uint8_t str[24];
 near volatile struct L_data *L_ptr;
 near volatile struct V_data V = {0};
-uint16_t timer0_off = TIMEROFFSET, timer1_off = SAMPLEFREQ;
 near volatile struct L_data L[strobe_max] = {0};
-volatile uint8_t l_state = 2;
-volatile uint16_t l_full = strobe_limit_l, l_width = strobe_line, l_complete = strobe_complete;
+
+//uint16_t timer0_off = TIMEROFFSET, timer1_off = SAMPLEFREQ;
 struct ringBufS_t ring_buf1;
 
 const uint8_t build_date[] = __DATE__, build_time[] = __TIME__;
 const uint8_t versions[] = "1.6";
+const uint16_t TIMEROFFSET = 18000;
+const uint16_t TIMERDEF = 60000;
 
 void interrupt high_priority tm_handler(void) // timer/serial functions are handled here
 {
@@ -88,10 +89,10 @@ void interrupt high_priority tm_handler(void) // timer/serial functions are hand
 		INTCONbits.INT0IF = FALSE;
 		RPMLED = (uint8_t)!RPMLED;
 		LED1 = 1;
-		if (l_state == 1) { // off state too long for full rotation, hall signal while in state 1
-			l_full += strobe_adjust; // off state lower limit adjustments for smooth strobe rotation
+		if (V.l_state == ISR_STATE_LINE) { // off state too long for full rotation, hall signal while in state 1
+			V.l_full += strobe_adjust; // off state lower limit adjustments for smooth strobe rotation
 		}
-		l_state = 0; // restart lamp flashing sequence, off time
+		V.l_state = ISR_STATE_FLAG; // restart lamp flashing sequence, off time
 
 		L_ptr = &L[V.line_num]; // select line strobe data
 		V.rotations++;
@@ -100,18 +101,18 @@ void interrupt high_priority tm_handler(void) // timer/serial functions are hand
 		switch (L_ptr->sequence.down) {
 		case 0:
 			L_ptr->strobe += L_ptr->sequence.offset;
-			if (L_ptr->strobe < l_full)
-				L_ptr->strobe = l_full; // set to sliding lower limit
+			if (L_ptr->strobe < V.l_full)
+				L_ptr->strobe = V.l_full; // set to sliding lower limit
 			break;
 		case 1:
 			L_ptr->strobe -= L_ptr->sequence.offset;
-			if (L_ptr->strobe < l_full)
+			if (L_ptr->strobe < V.l_full)
 				L_ptr->strobe = strobe_limit_h;
 			break;
 
 		default:
 			L_ptr->strobe -= L_ptr->sequence.offset;
-			if (L_ptr->strobe < l_full)
+			if (L_ptr->strobe < V.l_full)
 				L_ptr->strobe = strobe_limit_h;
 			break;
 		}
@@ -122,20 +123,20 @@ void interrupt high_priority tm_handler(void) // timer/serial functions are hand
 		}
 	}
 
-	if (PIR1bits.TMR1IF || l_state == 0) { // Timer1 int handler, for strobe timing
+	if (PIR1bits.TMR1IF || (V.l_state == ISR_STATE_FLAG)) { // Timer1 int handler, for strobe rotation timing
 		PIR1bits.TMR1IF = FALSE;
 
-		switch (l_state) {
-		case 0:
+		switch (V.l_state) {
+		case ISR_STATE_FLAG:
 			WRITETIMER1(L_ptr->strobe); // strobe positioning during rotation
 			T1CONbits.TMR1ON = 1;
 			G_OUT = 0;
 			R_OUT = 0;
 			B_OUT = 0;
-			l_state = 1; // off time after index to start time
+			V.l_state = ISR_STATE_LINE; // off time after index to start time
 			break;
-		case 1:
-			WRITETIMER1(l_width);
+		case ISR_STATE_LINE:
+			WRITETIMER1(V.l_width);
 			if (!L_ptr->sequence.skip) {
 				if (L_ptr->sequence.R)
 					R_OUT = 1;
@@ -145,10 +146,10 @@ void interrupt high_priority tm_handler(void) // timer/serial functions are hand
 					B_OUT = 1;
 			}
 
-			l_state = 2; // on start time duration for strobe pulse
+			V.l_state = ISR_STATE_WAIT; // on start time duration for strobe pulse
 			LED1 = 0;
 			break;
-		case 2:
+		case ISR_STATE_WAIT:
 		default:
 			T1CONbits.TMR1ON = 0;
 			G_OUT = 0;
@@ -170,7 +171,7 @@ void interrupt high_priority tm_handler(void) // timer/serial functions are hand
 
 	if (INTCONbits.TMR0IF) { //      check timer0 
 		INTCONbits.TMR0IF = FALSE; //      clear interrupt flag
-		WRITETIMER0(timer0_off);
+		WRITETIMER0(TIMEROFFSET);
 		LED5 = (uint8_t)!LED5; // active LED blinker
 	}
 
@@ -219,12 +220,12 @@ int16_t sw_work(void)
 
 	//	ClrWdt(); // reset watchdog
 
-	if (l_state < 2)
+	if (V.l_state != ISR_STATE_WAIT)
 		ret = -1;
 
 	if (!SW1) {
 		USART_putsr("\r\n Timer limit,");
-		itoa(str, l_full, 10);
+		itoa(str, V.l_full, 10);
 		USART_puts(str);
 		USART_putsr(" Timer value,");
 		itoa(str, L_ptr->strobe, 10);
@@ -259,7 +260,7 @@ int16_t sw_work(void)
 			case 'i':
 			case 'I': // info command
 				USART_putsr(" Timer limit,");
-				itoa(str, l_full, 10);
+				itoa(str, V.l_full, 10);
 				USART_puts(str);
 				USART_putsr(" OK");
 				break;
@@ -383,15 +384,14 @@ void init_rmsmon(void)
 	LED5 = LEDON;
 	LED6 = LEDON;
 	RPMLED = LEDON;
-	timer0_off = TIMEROFFSET; // blink fast
 	//	OpenTimer0(TIMER_INT_ON & T0_16BIT & T0_SOURCE_INT & T0_PS_1_256); // led blinker
 	T0CON = 0b10000111;
-	WRITETIMER0(timer0_off); //	start timer0 at ~1/2 second ticks
+	WRITETIMER0(TIMEROFFSET); //	start timer0 at ~1/2 second ticks
 	//	OpenTimer1(TIMER_INT_ON & T1_16BIT_RW & T1_SOURCE_INT & T1_PS_1_2 & T1_OSC1EN_OFF & T1_SYNC_EXT_OFF); // strobe position clock
 	T1CON = 0b10010101;
-	WRITETIMER1(timer1_off);
+	WRITETIMER1(TIMERDEF);
 	/* data link */
-	COMM_ENABLE = TRUE; // for PICDEM4 onboard RS-232, not used on custom board
+	COMM_ENABLE = TRUE; // for PICDEM4 onboard RS-232, not used on custom boards
 	TXSTAbits.TXEN = 1;
 	RCSTAbits.CREN = 1;
 	RCSTAbits.SPEN = 1;
@@ -405,6 +405,7 @@ void init_rmsmon(void)
 	INTCONbits.TMR0IE = 1; // enable int
 	INTCON2bits.TMR0IP = 1; // make it high P
 
+	/* rotation timer */
 	PIE1bits.TMR1IE = 1;
 	IPR1bits.TMR1IP = 1;
 
@@ -429,6 +430,9 @@ uint8_t init_rms_params(void)
 	V.line_num = 0;
 	V.comm_state = APP_STATE_INIT;
 	V.l_size = sizeof(L[0]);
+	V.l_state = ISR_STATE_WAIT;
+	V.l_full = strobe_limit_l;
+	V.l_width = strobe_line;
 
 	USART_putsr("\r\nVersion ");
 	USART_putsr(versions);
