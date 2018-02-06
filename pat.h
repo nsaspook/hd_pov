@@ -1,74 +1,65 @@
 #ifndef PAT_H_INCLUDED
-#define PAT_H_INCLUDED
-//	hardware defines 
-
-#ifdef INTTYPES
-#include <stdint.h>
-#else
-#define INTTYPES
-/*unsigned types*/
-typedef unsigned char uint8_t;
-typedef unsigned short int uint16_t;
-typedef unsigned long uint32_t;
-typedef unsigned long long uint64_t;
-/*signed types*/
-typedef signed char int8_t;
-typedef signed short int int16_t;
-typedef signed long int32_t;
-typedef signed long long int64_t;
-#endif
+#define PAT_H_INCLUDED 
 
 typedef enum {
-    /* rs232 Application's state machine's initial state. */
-    APP_STATE_INIT = 0,
-    APP_STATE_WAIT_FOR_UDATA,
-    APP_STATE_WAIT_FOR_RDATA,
-    APP_STATE_WAIT_FOR_DDATA,
-    APP_STATE_WAIT_FOR_SDATA,
-    APP_STATE_WAIT_FOR_eDATA,
-    APP_STATE_WAIT_FOR_EDATA,
-    /* Application Error state*/
-    APP_STATE_ERROR
+	/* rs232 Application's state machine's initial state. */
+	APP_STATE_INIT = 0,
+	APP_STATE_WAIT_FOR_UDATA,
+	APP_STATE_WAIT_FOR_RDATA,
+	APP_STATE_WAIT_FOR_DDATA,
+	APP_STATE_WAIT_FOR_SDATA,
+	APP_STATE_WAIT_FOR_eDATA,
+	APP_STATE_WAIT_FOR_EDATA,
+	/* Application Error state*/
+	APP_STATE_ERROR
 
 } APP_STATES;
 
-typedef struct V_data { // ISR data structure
-    uint8_t valid : 1;
-    APP_STATES comm_state;
-    uint8_t spinning : 1;
-    uint8_t boot_code : 1;
-    uint8_t line_num : 2;
-    uint8_t c_line_num : 2;
-    uint8_t rx_data, tx_data;
-    uint16_t rotations, sequences, patterns, l_size;
+typedef enum {
+	/* rotation state machine */
+	ISR_STATE_FLAG = 0,
+	ISR_STATE_LINE,
+	ISR_STATE_WAIT,
+	ISR_STATE_ERROR
+
+} ISR_STATES;
+
+typedef struct V_data { // control data structure
+	volatile uint8_t valid : 1;
+	volatile APP_STATES comm_state;
+	volatile ISR_STATES l_state;
+	volatile uint8_t spinning : 1;
+	volatile uint8_t boot_code : 1;
+	volatile uint8_t line_num : 2;
+	volatile uint8_t c_line_num : 2;
+	volatile uint8_t rx_data, tx_data;
+	volatile uint16_t rotations, sequences, patterns, l_size;
+	volatile uint16_t l_full, l_width;
+	uint8_t str[24];
 } V_data;
 
 typedef struct L_seq {
-    uint8_t down : 1; // rotation direction
-    uint8_t R : 1;
-    uint8_t G : 1;
-    uint8_t B : 1;
-    uint8_t end : 1; // last line in sequence
-    uint8_t skip : 1; // don't light led
-    uint16_t offset; // line movement 
+	uint8_t down : 1; // rotation direction
+	uint8_t R : 1;
+	uint8_t G : 1;
+	uint8_t B : 1;
+	uint8_t end : 1; // last line in sequence
+	uint8_t skip : 1; // don't light led
+	uint16_t offset; // line movement 
 };
 
 /* data for one complete rotation*/
 typedef struct L_data {
-    struct L_seq sequence;
-    uint16_t strobe;
+	struct L_seq sequence;
+	uint16_t strobe;
 } L_data;
 
 #define TRUE	1
 #define FALSE	0
 #define	ON      1
 #define	OFF     0
-#define	LEDON	0   // logic low lights led
-#define	LEDOFF	1
 
-#define	TIMEROFFSET	18000		// timer0 16bit counter value for ~1 second to overflow 44268
-#define	SAMPLEFREQ	60000		// timer1 default value
-
+//	hardware defines
 #define RMSPORTA	TRISA
 #define RMSPORTB	TRISB
 #define RMSPORT_IOA	0b00010000		// SW1 input RA4
@@ -87,7 +78,7 @@ typedef struct L_data {
 #define B_OUT		LATAbits.LATA2
 #define TACHIN		LATBbits.LATB0
 #define RPMLED		LATBbits.LATB5
-#define SW1         PORTAbits.RA4
+#define SW1		PORTAbits.RA4
 
 #define PAT2		// display patterns
 
@@ -104,6 +95,7 @@ typedef struct L_data {
 #define strobe_around	1080
 #endif
 
+/* rotation parms for 40mHZ PIC18f1320 */
 #define strobe_adjust	11
 #define strobe_limit_l	24250 // this limit is calc'd from the rs-232 port
 #define strobe_limit_h	65534
