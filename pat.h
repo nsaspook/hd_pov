@@ -54,10 +54,8 @@ typedef struct L_data {
 	uint16_t strobe;
 } L_data;
 
-#define TRUE	1
-#define FALSE	0
-#define	ON      1
-#define	OFF     0
+#define	ON      true
+#define	OFF     false
 
 //	hardware defines
 #define RMSPORTA	TRISA

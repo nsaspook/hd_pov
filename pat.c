@@ -64,6 +64,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdint.h>
+#include <stdbool.h>
 #include "pat.h"
 #include <string.h>
 #include "ringbufs.h"
@@ -84,7 +85,7 @@ const uint16_t TIMEROFFSET = 18000, TIMERDEF = 60000;
 void interrupt high_priority tm_handler(void) // timer/serial functions are handled here
 {
 	if (INTCONbits.INT0IF) { // Hall effect index signal, start of rotation
-		INTCONbits.INT0IF = FALSE;
+		INTCONbits.INT0IF = false;
 		RPMLED = (uint8_t)!RPMLED;
 		LED1 = 1;
 		if (V.l_state == ISR_STATE_LINE) { // off state too long for full rotation, hall signal while in state 1
@@ -122,7 +123,7 @@ void interrupt high_priority tm_handler(void) // timer/serial functions are hand
 	}
 
 	if (PIR1bits.TMR1IF || (V.l_state == ISR_STATE_FLAG)) { // Timer1 int handler, for strobe rotation timing
-		PIR1bits.TMR1IF = FALSE;
+		PIR1bits.TMR1IF = false;
 
 		switch (V.l_state) {
 		case ISR_STATE_FLAG:
@@ -168,7 +169,7 @@ void interrupt high_priority tm_handler(void) // timer/serial functions are hand
 
 
 	if (INTCONbits.TMR0IF) { //      check timer0 
-		INTCONbits.TMR0IF = FALSE; //      clear interrupt flag
+		INTCONbits.TMR0IF = false; //      clear interrupt flag
 		WRITETIMER0(TIMEROFFSET);
 		LED5 = (uint8_t)!LED5; // active LED blinker
 	}
@@ -215,8 +216,6 @@ int16_t sw_work(void)
 		L_data L_tmp;
 	} L_union;
 	int16_t ret = 0;
-
-	//	ClrWdt(); // reset watchdog
 
 	if (V.l_state != ISR_STATE_WAIT)
 		ret = -1;
@@ -313,14 +312,12 @@ int16_t sw_work(void)
 			if (offset >= sizeof(L_union.L_tmp)) {
 				INTCONbits.GIEH = 0;
 				L[position] = L_union.L_tmp;
-				INTCONbits.INT0IF = FALSE;
+				INTCONbits.INT0IF = false;
 				INTCONbits.GIEH = 1;
 				USART_putsr(" OK,");
 				utoa(V.str, (uint16_t) L_union.L_tmp.strobe, 10);
 				USART_puts(V.str);
 				V.comm_state = APP_STATE_INIT;
-
-
 			}
 			break;
 		case APP_STATE_WAIT_FOR_SDATA: // send
@@ -357,12 +354,12 @@ void init_rmsmon(void)
 	/*
 	 * check for a clean POR
 	 */
-	V.boot_code = FALSE;
+	V.boot_code = false;
 	if (RCON != 0b0011100)
-		V.boot_code = TRUE;
+		V.boot_code = true;
 
 	if (STKPTRbits.STKFUL || STKPTRbits.STKUNF) {
-		V.boot_code = TRUE;
+		V.boot_code = true;
 		STKPTRbits.STKFUL = 0;
 		STKPTRbits.STKUNF = 0;
 	}
@@ -389,7 +386,7 @@ void init_rmsmon(void)
 	T1CON = 0b10010101;
 	WRITETIMER1(TIMERDEF);
 	/* data link */
-	COMM_ENABLE = TRUE; // for PICDEM4 onboard RS-232, not used on custom boards
+	COMM_ENABLE = true; // for PICDEM4 onboard RS-232, not used on custom boards
 	TXSTAbits.TXEN = 1;
 	RCSTAbits.CREN = 1;
 	RCSTAbits.SPEN = 1;
@@ -422,9 +419,8 @@ void init_rmsmon(void)
 
 uint8_t init_rms_params(void)
 {
-	V.spinning = FALSE;
-	V.valid = TRUE;
-	V.comm_state = 0;
+	V.spinning = false;
+	V.valid = true;
 	V.line_num = 0;
 	V.comm_state = APP_STATE_INIT;
 	V.l_size = sizeof(L[0]);
@@ -441,6 +437,8 @@ uint8_t init_rms_params(void)
 	USART_putsr(build_date);
 	USART_putsr(", ");
 	USART_putsr(build_time);
+	if (V.boot_code)
+		USART_putsr(", dirty boot");
 
 	L_ptr = &L[0];
 	/* three line strobes in 3 16-bit timer values for spacing */
@@ -473,7 +471,7 @@ void main(void)
 	init_rmsmon();
 
 	/* Loop forever */
-	while (TRUE) { // busy work
+	while (true) { // busy work
 		sw_work(); // run housekeeping
 	}
 }
