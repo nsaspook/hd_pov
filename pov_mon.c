@@ -65,13 +65,13 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <stdbool.h>
-#include "pat.h"
+#include "pov_mon.h"
 #include <string.h>
 #include "ringbufs.h"
 
 int16_t sw_work(void);
-void init_rmsmon(void);
-uint8_t init_rms_params(void);
+void init_povmon(void);
+uint8_t init_hov_params(void);
 
 near struct V_data V = {0};
 near volatile struct L_data L[strobe_max] = {0}, *L_ptr;
@@ -348,7 +348,7 @@ int16_t sw_work(void)
 	return ret;
 }
 
-void init_rmsmon(void)
+void init_povmon(void)
 {
 	/*
 	 * check for a clean POR
@@ -410,14 +410,14 @@ void init_rmsmon(void)
 	PIE1bits.RCIE = 1; // enable rs232 serial receive interrupts
 	IPR1bits.RCIP = 1;
 
-	init_rms_params();
+	init_hov_params();
 	ringBufS_init(&ring_buf1);
 
 	/* Enable all high priority interrupts */
 	INTCONbits.GIEH = 1;
 }
 
-uint8_t init_rms_params(void)
+uint8_t init_hov_params(void)
 {
 	V.spinning = false;
 	V.valid = true;
@@ -468,7 +468,7 @@ uint8_t init_rms_params(void)
 
 void main(void)
 {
-	init_rmsmon();
+	init_povmon();
 
 	/* Loop forever */
 	while (true) { // busy work
