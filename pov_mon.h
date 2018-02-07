@@ -24,32 +24,32 @@ typedef enum {
 
 } ISR_STATES;
 
-typedef struct V_data { // control data structure
-	volatile uint8_t valid : 1;
-	volatile APP_STATES comm_state;
+typedef struct V_data { // control data structure with possible volatile issues
+	APP_STATES comm_state;
 	volatile ISR_STATES l_state;
-	volatile uint8_t spinning : 1;
-	volatile uint8_t boot_code : 1;
+	uint8_t boot_code : 1;
 	volatile uint8_t line_num : 2;
-	volatile uint8_t c_line_num : 2;
-	volatile uint8_t rx_data, tx_data;
-	volatile uint16_t rotations, sequences, patterns, l_size;
+	volatile uint8_t rx_data;
+	uint16_t l_size;
+	volatile uint16_t rotations, sequences;
 	volatile uint16_t l_full, l_width;
 	uint8_t str[24];
 } V_data;
 
-typedef struct L_seq {
+typedef volatile struct L_seq {
 	uint8_t down : 1; // rotation direction
 	uint8_t R : 1;
 	uint8_t G : 1;
 	uint8_t B : 1;
 	uint8_t end : 1; // last line in sequence
 	uint8_t skip : 1; // don't light led
+	uint8_t rot :1;  // rotation and sequence flags
+	uint8_t seq :1;
 	uint16_t offset; // line movement 
 };
 
 /* data for one complete rotation*/
-typedef struct L_data {
+typedef volatile struct L_data {
 	struct L_seq sequence;
 	uint16_t strobe;
 } L_data;

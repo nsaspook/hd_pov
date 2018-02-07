@@ -74,7 +74,7 @@ void init_povmon(void);
 uint8_t init_hov_params(void);
 
 near struct V_data V = {0};
-near volatile struct L_data L[strobe_max] = {0}, *L_ptr;
+near struct L_data L[strobe_max] = {0}, *L_ptr;
 
 /* rs233 command buffer */
 struct ringBufS_t ring_buf1;
@@ -98,12 +98,12 @@ void interrupt high_priority tm_handler(void) // timer/serial functions are hand
 
 		/* limit rotational timer values during offsets */
 		switch (L_ptr->sequence.down) {
-		case 0:
+		case false:
 			L_ptr->strobe += L_ptr->sequence.offset;
 			if (L_ptr->strobe < V.l_full)
 				L_ptr->strobe = V.l_full; // set to sliding lower limit
 			break;
-		case 1:
+		case true:
 			L_ptr->strobe -= L_ptr->sequence.offset;
 			if (L_ptr->strobe < V.l_full)
 				L_ptr->strobe = strobe_limit_h;
@@ -419,8 +419,6 @@ void init_povmon(void)
 
 uint8_t init_hov_params(void)
 {
-	V.spinning = false;
-	V.valid = true;
 	V.line_num = 0;
 	V.comm_state = APP_STATE_INIT;
 	V.l_size = sizeof(L[0]);
