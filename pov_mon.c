@@ -76,7 +76,7 @@ uint8_t init_hov_params(void);
 near struct V_data V = {0};
 near struct L_data L[strobe_max] = {0}, *L_ptr;
 
-/* rs233 command buffer */
+/* RS232 command buffer */
 struct ringBufS_t ring_buf1;
 
 const uint8_t build_date[] = __DATE__, build_time[] = __TIME__, versions[] = "1.7";
@@ -85,10 +85,11 @@ const uint16_t TIMEROFFSET = 18000, TIMERDEF = 60000;
 void interrupt high_priority tm_handler(void) // timer/serial functions are handled here
 {
 	LED1 = 1;
+	// line rotation sequencer
 	if (INTCONbits.INT0IF) { // Hall effect index signal, start of rotation
 		INTCONbits.INT0IF = false;
 		RPMLED = (uint8_t)!RPMLED;
-		if (V.l_state == ISR_STATE_LINE) { // off state too long for full rotation, hall signal while in state 1
+		if (V.l_state == ISR_STATE_LINE) { // off state too long for full rotation, hall signal while in state
 			V.l_full += strobe_adjust; // off state lower limit adjustments for smooth strobe rotation
 		}
 		V.l_state = ISR_STATE_FLAG; // restart lamp flashing sequence, off time
@@ -122,6 +123,7 @@ void interrupt high_priority tm_handler(void) // timer/serial functions are hand
 		}
 	}
 
+	// line RGB pulsing state machine
 	if (PIR1bits.TMR1IF || (V.l_state == ISR_STATE_FLAG)) { // Timer1 int handler, for strobe rotation timing
 		PIR1bits.TMR1IF = false;
 
@@ -147,28 +149,29 @@ void interrupt high_priority tm_handler(void) // timer/serial functions are hand
 
 			V.l_state = ISR_STATE_WAIT; // on start time duration for strobe pulse
 			break;
-		case ISR_STATE_WAIT:
+		case ISR_STATE_WAIT: // waiting for next HALL sensor pulse
 		default:
-			T1CONbits.TMR1ON = 0;
-			G_OUT = 0;
+			T1CONbits.TMR1ON = 0; // idle timer
+			G_OUT = 0; // blank RGB
 			R_OUT = 0;
 			B_OUT = 0;
 			break;
 		}
 	}
 
+	// remote command data buffer
 	if (PIR1bits.RCIF) { // is data from RS-232 port
-		V.rx_data = RCREG;
+		V.rx_data = RCREG; // save in state machine register
 		if (RCSTAbits.OERR) {
 			RCSTAbits.CREN = 0; // clear overrun
 			RCSTAbits.CREN = 1; // re-enable
 		}
-		ringBufS_put(&ring_buf1, V.rx_data);
+		ringBufS_put(&ring_buf1, V.rx_data); // buffer RS232 data
 	}
 
-
-	if (INTCONbits.TMR0IF) { //      check timer0 
-		INTCONbits.TMR0IF = false; //      clear interrupt flag
+	// check timer0 for blinker led
+	if (INTCONbits.TMR0IF) {
+		INTCONbits.TMR0IF = false;
 		WRITETIMER0(TIMEROFFSET);
 		LED5 = (uint8_t)!LED5; // active LED blinker
 	}
@@ -204,13 +207,13 @@ void puts_ok(uint16_t size)
 	USART_puts(V.str); // send size of data array
 }
 
-/* main loop routine */
+/* main loop work routine */
 int16_t sw_work(void)
 {
 	static uint8_t position = 0, offset = 0, rx_data;
 	static uint8_t *L_tmp_ptr;
 
-	static union L_union_type { // so we can access each byte of the struct
+	static union L_union_type { // so we can access each byte of the command structure
 		uint8_t L_bytes[sizeof(L[0]) + 1];
 		L_data L_tmp;
 	} L_union;
@@ -229,8 +232,11 @@ int16_t sw_work(void)
 	}
 
 	/* command state machine 
-	 * u update the current display buffer with remote rs232 data
-	 * d display the current display buffer on rs232 port
+	 * u/U update the current display buffer with remote RS232 data
+	 * d/D display the current display buffer on RS232 port
+	 * e/E clear/set end of lines flag on display buffer
+	 * i/I timer info command
+	 * z/Z null command
 	 */
 	if (!ringBufS_empty(&ring_buf1)) {
 		rx_data = ringBufS_get(&ring_buf1);
@@ -348,6 +354,7 @@ int16_t sw_work(void)
 	return ret;
 }
 
+/* controller hardware setup */
 void init_povmon(void)
 {
 	/*
@@ -417,6 +424,7 @@ void init_povmon(void)
 	INTCONbits.GIEH = 1;
 }
 
+/* program data setup */
 uint8_t init_hov_params(void)
 {
 	V.line_num = 0;
@@ -466,10 +474,11 @@ uint8_t init_hov_params(void)
 
 void main(void)
 {
+	/* configure system */
 	init_povmon();
 
 	/* Loop forever */
 	while (true) { // busy work
-		sw_work(); // run housekeeping
+		sw_work(); // run housekeeping for non-ISR tasks
 	}
 }
