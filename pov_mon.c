@@ -79,7 +79,7 @@ near struct L_data L[strobe_max] = {0}, *L_ptr;
 /* RS232 command buffer */
 struct ringBufS_t ring_buf1;
 
-const uint8_t build_date[] = __DATE__, build_time[] = __TIME__, versions[] = "1.7";
+const uint8_t build_date[] = __DATE__, build_time[] = __TIME__, versions[] = "1.71";
 const uint16_t TIMEROFFSET = 18000, TIMERDEF = 60000;
 
 void interrupt high_priority tm_handler(void) // timer/serial functions are handled here
