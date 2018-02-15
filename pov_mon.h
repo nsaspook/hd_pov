@@ -80,7 +80,6 @@ typedef volatile struct L_data {
 
 #define PAT2		// display patterns
 
-
 #ifdef PAT1
 #define strobe_up	67
 #define strobe_down	31
@@ -97,7 +96,6 @@ typedef volatile struct L_data {
 #define strobe_adjust	11
 #define strobe_limit_l	24250 // this limit is calc'd from the rs-232 port
 #define strobe_limit_h	65534
-#define strobe_line	64900 // line width timer count
-#define strobe_complete	1000 // end of rotation timer count
+#define strobe_line	65100 // line width timer count
 #define strobe_max	16
 #endif 
