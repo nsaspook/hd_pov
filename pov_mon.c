@@ -1,4 +1,4 @@
-// HD POV Version for XC8
+// HD POV Version for XC8pov_mon.c:358:: warning: (520) function "_uitoa" is never called
 // PIC18F1320 Configuration Bit Settings 
 
 // CONFIG1H
@@ -179,6 +179,30 @@ void __interrupt() tm_handler(void) // timer/serial functions are handled here
 	LED1 = 0;
 }
 
+void uitoa(uint8_t * Buffer, uint16_t Value)
+{
+	uint8_t i;
+	uint16_t Digit;
+	uint16_t Divisor;
+	bool Printed = false;
+
+	if (Value) {
+		for (i = 0, Divisor = 10000; i < 5u; i++) {
+			Digit = Value / Divisor;
+			if (Digit || Printed) {
+				*Buffer++ = '0' + Digit;
+				Value -= Digit*Divisor;
+				Printed = true;
+			}
+			Divisor /= 10;
+		}
+	} else {
+		*Buffer++ = '0';
+	}
+
+	*Buffer = '\0';
+}
+
 void USART_putc(uint8_t c)
 {
 	while (!TXSTAbits.TRMT);
@@ -203,7 +227,8 @@ void USART_putsr(const char *s)
 
 void puts_ok(uint16_t size)
 {
-//	itoa(V.str, size, 10);
+	//	itoa(V.str, size, 10);
+	uitoa(V.str, size);
 	USART_putsr("\r\n OK");
 	USART_puts(V.str); // send size of data array
 }
@@ -225,10 +250,12 @@ int16_t sw_work(void)
 
 	if (!SW1) {
 		USART_putsr("\r\n Timer limit,");
-//		itoa(V.str, V.l_full, 10);
+		//		itoa(V.str, V.l_full, 10);
+		uitoa(V.str, V.l_full);
 		USART_puts(V.str);
 		USART_putsr(" Timer value,");
-//		itoa(V.str, L_ptr->strobe, 10);
+		//		itoa(V.str, L_ptr->strobe, 10);
+		uitoa(V.str, L_ptr->strobe);
 		USART_puts(V.str);
 	}
 
@@ -263,7 +290,8 @@ int16_t sw_work(void)
 			case 'i':
 			case 'I': // info command
 				USART_putsr(" Timer limit,");
-//				itoa(V.str, V.l_full, 10);
+				//				itoa(V.str, V.l_full, 10);
+				uitoa(V.str, V.l_full);
 				USART_puts(V.str);
 				USART_putsr(" OK");
 				break;
@@ -321,7 +349,8 @@ int16_t sw_work(void)
 				INTCONbits.INT0IF = false;
 				INTCONbits.GIEH = 1;
 				USART_putsr(" OK,");
-//				utoa(V.str, (uint16_t) L_union.L_tmp.strobe, 10);
+				//				utoa(V.str, (uint16_t) L_union.L_tmp.strobe, 10);
+				uitoa(V.str, (uint16_t) L_union.L_tmp.strobe);
 				USART_puts(V.str);
 				V.comm_state = APP_STATE_INIT;
 			}
@@ -331,9 +360,11 @@ int16_t sw_work(void)
 			do { // send ascii data to the rs232 port
 				USART_putsr(" ,");
 				if (offset) {
-//					itoa(V.str, *L_tmp_ptr, 16); // show hex
+					//					itoa(V.str, *L_tmp_ptr, 16); // show hex
+					uitoa(V.str, *L_tmp_ptr); // show dec
 				} else {
-//					itoa(V.str, *L_tmp_ptr, 2); // show bits
+					//					itoa(V.str, *L_tmp_ptr, 2); // show bits
+					uitoa(V.str, *L_tmp_ptr); // show dec
 				}
 				USART_puts(V.str);
 				L_tmp_ptr++;
@@ -438,7 +469,7 @@ uint8_t init_hov_params(void)
 	USART_putsr("\r\nVersion ");
 	USART_putsr(versions);
 	USART_putsr(", ");
-//	itoa(V.str, sizeof(L[0]), 10);
+	//	itoa(V.str, sizeof(L[0]), 10);
 	USART_puts(V.str);
 	USART_putsr(", ");
 	USART_putsr(build_date);
